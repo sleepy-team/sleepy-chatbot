@@ -3,6 +3,9 @@ name = "sleepy-backend"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+    "aiosqlite>=0.22.1",
+    "email-validator>=2.3.0",
+    "fastapi>=0.162.4",
     "langchain>=1.4.10",
     "langchain-classic>=1.0.8",
     "langchain-community>=0.4.2",
@@ -14,10 +17,14 @@ dependencies = [
     "pyyaml>=6.0.3",
     "qdrant-client>=1.20.0",
     "rank-bm25>=0.2.2",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
     "ruff>=0.17.4",
 ]
 
@@ -26,3 +33,10 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends"]
