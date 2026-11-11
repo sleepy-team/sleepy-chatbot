@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SLEEPY · 슬리비</title>
+<meta name="description" content="앱 없이 귀에 꽂기만 하는 디지털 귀마개 슬리비. 양이성 음향으로 잠드는 밤을 돕습니다. (챗봇 시연용 데모)">
+<meta name="theme-color" content="#15110D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@200..500&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  /* 객실의 밤: 훈연 월넛 바닥, 리넨 글자, 스탠드 조명 하나 */
+  :root {
+    color-scheme: dark;
+    --walnut: #15110D;
+    --wall: #1C1713;
+    --wood: #261E18;
+    --wood-2: #31271F;
+    --linen: #EDE4D3;
+    --linen-2: #C4B7A2;
+    --linen-3: #9C8F7C;
+    --lamp: #E8B46A;
+    --lamp-hi: #F4CC8E;
+    --lamp-ink: #20150A;
+    --brass: rgba(184, 147, 90, .34);
+    --brass-2: rgba(184, 147, 90, .6);
+    --hair: rgba(237, 228, 211, .09);
+    --ember: #3A2614;
+
+    --display: "Hahmlet", "Nanum Myeongjo", serif;
+    --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+    --ease-out: cubic-bezier(0, 0, .58, 1);
+    /* 모서리: Griffin 토큰 4 / 8 / 12 / 20 / full */
+    --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-xl: 20px; --r-full: 9999px;
+    --gutter: 20px;
+    --header: 64px;
+    --section: clamp(96px, 12vw, 168px);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header) + 12px); -webkit-text-size-adjust: 100%; scrollbar-color: var(--wood-2) var(--walnut); }
+  body {
+    margin: 0;
+    background: var(--walnut);
+    color: var(--linen);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.75;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    caret-color: var(--lamp);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--lamp); color: var(--lamp-ink); }
+  :focus-visible { outline: 2px solid var(--lamp); outline-offset: 3px; border-radius: 8px; }
+  h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; padding: 0; }
+  ul, ol { list-style: none; }
+  a { color: inherit; text-underline-offset: 4px; text-decoration-color: var(--brass-2); }
+  button, input, textarea { font: inherit; color: inherit; }
+  .wrap { width: min(100% - 2 * var(--gutter), 1160px); margin-inline: auto; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .display { font-family: var(--display); font-weight: 300; letter-spacing: -.035em; text-wrap: balance; }
+
+  /* ===== 데모 안내 ===== */
+  .demo-bar { padding: 8px var(--gutter); background: #0E0B09; color: var(--linen-3); font-size: 13px; line-height: 1.5; text-align: center; }
+
+  /* ===== 헤더 ===== */
+  .site-header { position: sticky; top: 0; z-index: 30; background: rgba(21, 17, 13, .94); border-bottom: 1px solid var(--hair); }
+  .site-header .wrap { display: flex; align-items: center; justify-content: space-between; height: var(--header); }
+  .wordmark { font-family: var(--display); font-weight: 400; font-size: 19px; letter-spacing: .34em; text-decoration: none; }
+  .nav { display: none; gap: 4px; color: var(--linen-2); font-size: 15px; }
+  .nav a { padding: 8px 14px; border-radius: var(--r-full); text-decoration: none; transition: color .2s var(--ease-out), background-color .2s var(--ease-out); }
+  .nav a:hover { color: var(--linen); background: rgba(237, 228, 211, .07); }
+  .menu-btn { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -10px; border: 0; background: none; cursor: pointer; }
+  .menu-btn svg { width: 22px; height: 22px; }
+  .mobile-nav { display: none; padding: 4px var(--gutter) 16px; border-top: 1px solid var(--hair); }
+  .mobile-nav.is-open { display: grid; }
+  .mobile-nav a { padding: 13px 0; color: var(--linen-2); text-decoration: none; border-bottom: 1px solid var(--hair); }
+  .mobile-nav a:last-child { border-bottom: 0; }
+
+  /* ===== HERO: 턴다운이 끝난 객실 ===== */
+  .hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    min-height: calc(100svh - var(--header) - 37px);
+    display: grid; align-items: end;
+    padding-block: 96px clamp(56px, 9vh, 112px);
+  }
+  .night { position: absolute; inset: 0; z-index: -4; width: 100%; height: 100%; }
+  .mullions {
+    position: absolute; inset: 0; z-index: -3; pointer-events: none;
+    background:
+      linear-gradient(180deg, #0D0A08 0 7px, transparent 7px calc(16% - 3px), #0D0A08 calc(16% - 3px) 16%, transparent 16%),
+      repeating-linear-gradient(90deg, transparent 0 calc(20% - 7px), #0D0A08 calc(20% - 7px) 20%),
+      linear-gradient(180deg, rgba(21,17,13,.15) 0%, rgba(21,17,13,.35) 45%, rgba(21,17,13,.92) 82%, var(--walnut) 100%),
+      linear-gradient(90deg, rgba(21,17,13,.9) 0%, rgba(21,17,13,.72) 42%, rgba(21,17,13,.2) 68%, transparent 100%);
+  }
+  /* 유리창에 번진 스탠드 불빛: 점이 아니라 오른쪽 창 두 칸을 데우는 넓은 빛 */
+  .reflect {
+    position: absolute; z-index: -2; pointer-events: none; inset: 0 0 0 auto; width: 52%;
+    background:
+      radial-gradient(48% 34% at 72% 30%, rgba(255, 214, 150, .2), transparent 70%),
+      radial-gradient(70% 60% at 80% 40%, rgba(232, 164, 84, .12), transparent 75%),
+      linear-gradient(90deg, transparent, rgba(232, 164, 84, .05));
+  }
+  .lamp-glow {
+    position: absolute; z-index: -2; pointer-events: none;
+    right: calc(6% - min(30vw, 380px)); top: calc(4% - min(26vw, 320px));
+    width: min(94vw, 1200px); aspect-ratio: 1;
+    background: radial-gradient(closest-side, rgba(244, 196, 120, .2), rgba(232, 164, 84, .1) 50%, transparent);
+  }
+  /* 턴다운: 천장 조명이 꺼지고 스탠드만 남는다 */
+  .ceiling { position: absolute; inset: 0; z-index: -1; background: #CDBB9E; mix-blend-mode: soft-light; opacity: 0; pointer-events: none; }
+  .turndown .ceiling { animation: lights-off 2.6s var(--ease) .2s both; }
+  .turndown .lamp-glow, .turndown .reflect { animation: lamp-on 3.2s var(--ease) .6s both; }
+  @keyframes lights-off { from { opacity: .9; } to { opacity: 0; } }
+  @keyframes lamp-on { from { opacity: .25; transform: scale(.9); } to { opacity: 1; transform: none; } }
+
+  .hero h1 { font-size: clamp(44px, 6vw, 76px); line-height: 1.08; }
+  .hero h1 span { color: var(--lamp-hi); }
+  .hero-sub { margin-top: 24px; max-width: 34em; color: var(--linen-2); font-size: clamp(17px, 1.5vw, 20px); font-weight: 300; line-height: 1.5; }
+
+  /* 프런트 데스크 입력 */
+  .desk { margin-top: 44px; max-width: 600px; }
+  .desk-form {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 7px 7px 24px;
+    border: 1px solid var(--brass-2); border-radius: 999px;
+    background: rgba(14, 11, 9, .82);
+    box-shadow: 0 18px 48px -18px rgba(0,0,0,.8), 0 0 0 6px rgba(232,180,106,.05);
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .desk-form:focus-within { border-color: var(--lamp); box-shadow: 0 18px 48px -18px rgba(0,0,0,.8), 0 0 0 6px rgba(232,180,106,.12); }
+  .desk-form input { flex: 1; min-width: 0; height: 48px; border: 0; background: none; font-size: 16.5px; }
+  .desk-form input::placeholder { color: var(--linen-3); }
+  .desk-form input:focus { outline: none; }
+  .ask-btn {
+    display: inline-flex; align-items: center; gap: 8px; flex: none;
+    height: 48px; padding: 0 22px; border: 0; border-radius: 999px;
+    background: var(--lamp); color: var(--lamp-ink); font-weight: 600; font-size: 15.5px; cursor: pointer;
+    transition: background-color .25s, transform .3s var(--ease);
+  }
+  .ask-btn:hover { background: var(--lamp-hi); }
+  .ask-btn:active { transform: scale(.97); }
+  .ask-btn svg { width: 17px; height: 17px; }
+  .suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .pill {
+    min-height: 40px; padding: 8px 16px; border: 1px solid var(--brass); border-radius: 999px;
+    background: rgba(14, 11, 9, .5); color: var(--linen-2); font-size: 14px; line-height: 1.4; text-align: left; cursor: pointer;
+    transition: border-color .25s, color .25s, background-color .25s;
+  }
+  .pill:hover { border-color: var(--lamp); color: var(--lamp-hi); background: rgba(232,180,106,.08); }
+
+  /* ===== 공통 ===== */
+  .section { padding-block: var(--section); }
+  .section-title { font-size: clamp(30px, 3.4vw, 44px); line-height: 1.15; }
+  .lead { margin-top: 20px; max-width: 34em; color: var(--linen-2); font-size: clamp(17px, 1.5vw, 20px); font-weight: 300; line-height: 1.5; }
+
+  /* ===== 문제: 잠 못 드는 밤의 시각 ===== */
+  .problem { position: relative; isolation: isolate; overflow: hidden; background: linear-gradient(180deg, var(--walnut), #110E0B); }
+  .problem::after {
+    content: ""; position: absolute; z-index: -1; left: -6%; bottom: 0; width: 64%; height: 300px;
+    background: radial-gradient(closest-side, rgba(232, 164, 84, .16), transparent);
+  }
+  .night-log { margin-top: clamp(56px, 7vw, 96px); }
+  .night-log li {
+    display: grid; gap: 6px 48px; align-items: baseline;
+    padding-block: 34px; border-top: 1px solid var(--hair);
+  }
+  .night-log li:last-child { border-bottom: 1px solid var(--hair); }
+  .night-log time { font-family: var(--mono); font-weight: 400; font-size: clamp(36px, 4.4vw, 56px); line-height: 1; color: var(--linen-3); font-variant-numeric: tabular-nums slashed-zero; letter-spacing: -.02em; white-space: nowrap; }
+  .night-log li:nth-child(2) time { color: #B59A72; }
+  .night-log li:nth-child(3) time { color: var(--lamp); }
+  .night-log h3 { font-size: clamp(20px, 2vw, 24px); font-weight: 600; line-height: 1.45; }
+  .night-log p { margin-top: 6px; max-width: 36em; color: var(--linen-2); }
+
+  /* ===== 기능 ===== */
+  .feature { position: relative; isolation: isolate; overflow: hidden; }
+  .feature::before {
+    content: ""; position: absolute; z-index: -1; left: 50%; top: 0; width: 1400px; height: 900px; translate: -50% -45%;
+    background: radial-gradient(closest-side, rgba(232, 164, 84, .1), transparent);
+  }
+
+  .listen {
+    display: grid; gap: 32px; margin-top: clamp(48px, 6vw, 80px);
+    padding: clamp(28px, 4vw, 52px); border: 1px solid var(--brass); border-radius: var(--r-xl);
+    background: linear-gradient(160deg, var(--wood), var(--wall) 60%);
+    box-shadow: 0 40px 80px -40px rgba(0,0,0,.9);
+  }
+  .listen h3 { font-family: var(--display); font-weight: 300; font-size: clamp(24px, 2.2vw, 32px); line-height: 1.25; letter-spacing: -.03em; }
+  .listen-copy p { margin-top: 12px; color: var(--linen-2); }
+  .listen-note { margin-top: 14px !important; color: var(--linen-3) !important; font-size: 13.5px; }
+  .play {
+    display: inline-flex; align-items: center; gap: 12px; margin-top: 26px;
+    height: 54px; padding: 0 26px 0 8px; border: 1px solid var(--brass-2); border-radius: 999px;
+    background: transparent; color: var(--linen); font-weight: 600; cursor: pointer;
+    transition: border-color .3s, background-color .3s;
+  }
+  .play:hover { border-color: var(--lamp); background: rgba(232,180,106,.06); }
+  .play i { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--lamp); color: var(--lamp-ink); }
+  .play i svg { width: 16px; height: 16px; }
+  .play .ic-stop { display: none; }
+  .play[aria-pressed="true"] .ic-play { display: none; }
+  .play[aria-pressed="true"] .ic-stop { display: block; }
+
+  .scope { display: grid; gap: 14px; }
+  .scope-row { display: grid; grid-template-columns: 76px 1fr; align-items: center; gap: 16px; }
+  .scope-row dt { color: var(--linen-3); font-size: 13px; line-height: 1.4; }
+  .scope-row dt b { display: block; margin-top: 4px; color: var(--linen); font-family: var(--mono); font-size: 16px; font-weight: 400; letter-spacing: .02em; font-variant-numeric: tabular-nums slashed-zero; }
+  .scope-row.beat { margin-top: 8px; padding-top: 22px; border-top: 1px dashed var(--brass); }
+  .scope-row.beat dt b { color: var(--lamp); }
+  .scope canvas { display: block; width: 100%; height: 52px; }
+
+  .answers { margin-top: clamp(64px, 8vw, 112px); }
+  .answers li { display: grid; gap: 10px 48px; padding-block: 32px; border-top: 1px solid var(--hair); }
+  .answers li:last-child { border-bottom: 1px solid var(--hair); }
+  .answers h3 { font-family: var(--display); font-weight: 300; font-size: clamp(24px, 2.2vw, 32px); line-height: 1.25; letter-spacing: -.03em; }
+  .answers p { color: var(--linen-2); max-width: 34em; }
+
+  .ritual { margin-top: clamp(72px, 9vw, 120px); text-align: center; }
+  .ritual p.display { font-size: clamp(28px, 3.8vw, 48px); line-height: 1.22; }
+  .ritual p.display span { color: var(--linen-3); }
+  .ritual p.display em { font-style: normal; color: var(--lamp-hi); }
+  .in-box { margin-top: 22px; color: var(--linen-3); font-size: 14.5px; }
+
+  /* ===== FAQ ===== */
+  .faq { background: var(--wall); border-block: 1px solid var(--hair); }
+  .faq-grid { display: grid; gap: 40px; }
+  .faq-side .lead { font-size: 17px; }
+  .text-link {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 26px; padding: 0; border: 0; background: none;
+    color: var(--lamp); font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-color: var(--brass-2); text-underline-offset: 6px;
+  }
+  .text-link svg { width: 16px; height: 16px; transition: transform .3s var(--ease); }
+  .text-link:hover svg { transform: translateX(3px); }
+  .faq-list details { border-bottom: 1px solid var(--hair); }
+  .faq-list details:first-child { border-top: 1px solid var(--hair); }
+  .faq-list summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    min-height: 68px; padding-block: 18px; cursor: pointer; list-style: none;
+    font-size: 18px; font-weight: 400; line-height: 1.3; transition: color .2s var(--ease-out);
+  }
+  .faq-list summary::-webkit-details-marker { display: none; }
+  .faq-list summary:hover { color: var(--lamp-hi); }
+  .faq-list summary svg { flex: none; width: 20px; height: 20px; color: var(--lamp); transition: transform .4s var(--ease); }
+  .faq-list details[open] summary svg { transform: rotate(45deg); }
+  .faq-list details p { padding: 0 44px 24px 0; color: var(--linen-2); }
+
+  /* ===== CTA: 스탠드 불빛 아래 ===== */
+  .cta {
+    position: relative; isolation: isolate; overflow: hidden; text-align: center;
+    background: linear-gradient(180deg, #4A2F17 0, #3A2614 76px, #2A1B0F 40%, #17100A 100%);
+  }
+  /* 스탠드 빛이 탁자 위에 떨어진 모양: 가장자리가 있는 타원과 황동 테두리 */
+  .cta::before {
+    content: ""; position: absolute; z-index: -1; left: 50%; top: 0; width: min(1100px, 140vw); height: 150px; translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 220, 160, .5), rgba(240, 180, 100, .22) 60%, rgba(240, 180, 100, .06) 98%, transparent 100%);
+  }
+  .cta::after {
+    content: ""; position: absolute; z-index: -1; left: 50%; top: 75px; width: min(1100px, 140vw); height: 1px; translate: -50% 0;
+    background: linear-gradient(90deg, transparent, rgba(232, 180, 106, .55) 30%, rgba(232, 180, 106, .55) 70%, transparent);
+  }
+  .cta .section-title { max-width: 14em; margin-inline: auto; }
+  .cta .lead { margin-inline: auto; color: #D9C6A8; }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 12px; margin-top: 40px;
+    min-height: 60px; padding: 0 34px; border: 0; border-radius: 999px;
+    background: var(--lamp); color: var(--lamp-ink); font-size: 17px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 16px 40px -14px rgba(0,0,0,.7);
+    transition: background-color .25s, transform .4s var(--ease);
+  }
+  .cta-btn:hover { background: var(--lamp-hi); transform: translateY(-2px); }
+  .cta-btn svg { width: 20px; height: 20px; }
+  .notify { max-width: 460px; margin: 56px auto 0; padding-top: 32px; border-top: 1px solid rgba(232,180,106,.22); }
+  .notify label { display: block; color: #CDB894; font-size: 14.5px; }
+  .notify-row { display: flex; gap: 8px; margin-top: 12px; }
+  .notify input {
+    flex: 1; min-width: 0; height: 48px; padding: 0 20px; border: 1px solid rgba(232,180,106,.35); border-radius: 999px;
+    background: rgba(14,11,9,.55); font-size: 15px;
+  }
+  .notify input::placeholder { color: #A08C6E; }
+  .notify input:focus { outline: none; border-color: var(--lamp); }
+  .notify button { height: 48px; padding: 0 20px; border: 1px solid rgba(232,180,106,.5); border-radius: 999px; background: transparent; color: var(--linen); font-weight: 600; cursor: pointer; transition: background-color .25s; }
+  .notify button:hover { background: rgba(232,180,106,.12); }
+  .notify-msg { min-height: 1.6em; margin-top: 10px; color: #CDB894; font-size: 14px; }
+
+  .site-footer { padding-block: 44px 112px; color: var(--linen-3); font-size: 14px; }
+  .site-footer .wrap { display: grid; gap: 14px; }
+  .site-footer .wordmark { font-size: 15px; color: var(--linen-2); }
+
+  /* 스크롤 등장: 기본은 보이고, 스크립트가 켜질 때만 */
+  /* 시계가 밤의 순서대로 켜진다 (스크립트가 있을 때만) */
+  .night-log.is-waiting time { color: #3A322A !important; transition: color 1.6s var(--ease); }
+  .night-log.is-lit time { transition: color 1.6s var(--ease); }
+  .night-log.is-lit li:nth-child(2) time { transition-delay: .7s; }
+  .night-log.is-lit li:nth-child(3) time { transition-delay: 1.4s; }
+
+  /* =========================================================
+     안내 도우미 (챗봇)
+     ========================================================= */
+  .launcher {
+    position: fixed; right: 20px; bottom: 20px; z-index: 40;
+    display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px 0 16px;
+    border: 1px solid var(--brass-2); border-radius: 999px; background: var(--wood);
+    color: var(--linen); font-weight: 600; font-size: 15px; cursor: pointer;
+    box-shadow: 0 16px 40px -12px rgba(0,0,0,.85);
+    transition: transform .4s var(--ease), opacity .3s, border-color .3s;
+  }
+  .launcher:hover { border-color: var(--lamp); transform: translateY(-2px); }
+  .launcher .dot { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--lamp); color: var(--lamp-ink); }
+  .launcher .dot svg { width: 16px; height: 16px; }
+  .chat-open .launcher { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
+  .chat {
+    position: fixed; right: 20px; bottom: 20px; z-index: 50;
+    display: flex; flex-direction: column;
+    width: 404px; height: min(700px, calc(100svh - 40px));
+    border: 1px solid var(--brass); border-radius: var(--r-xl);
+    background: linear-gradient(180deg, #221B15, #17120E 40%);
+    box-shadow: 0 40px 90px -30px rgba(0,0,0,.95);
+    overflow: hidden;
+    opacity: 0; visibility: hidden; transform: translateY(14px); transform-origin: bottom right;
+    transition: opacity .4s var(--ease), transform .5s var(--ease), width .45s var(--ease), height .45s var(--ease), visibility 0s .5s;
+  }
+  .chat-open .chat { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .chat.is-wide { width: min(780px, calc(100vw - 40px)); height: calc(100svh - 40px); }
+  .chat.is-solo { inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; }
+  .chat.is-solo .chat-body, .chat.is-solo .chat-foot { width: min(100%, 760px); margin-inline: auto; }
+  .chat.is-solo [data-act="expand"], .chat.is-solo [data-act="close"] { display: none; }
+  .chat:not(.is-solo) [data-act="exit-solo"] { display: none; }
+
+  .chat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 14px 16px 24px; border-bottom: 1px solid var(--hair); }
+  .chat-name b { display: block; font-family: var(--display); font-weight: 300; font-size: 16px; letter-spacing: .3em; line-height: 1.3; }
+  .chat-name span { display: flex; align-items: center; gap: 7px; color: var(--linen-3); font-size: 13px; }
+  .chat-name span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--lamp); }
+  .tools { display: flex; }
+  .tool { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: var(--r-md); background: none; color: var(--linen-2); cursor: pointer; transition: background-color .2s var(--ease-out), color .2s var(--ease-out); }
+  .tool:hover { background: var(--wood-2); color: var(--linen); }
+  .tool svg { width: 19px; height: 19px; }
+
+  .chat-body { flex: 1; overflow-y: auto; padding: 28px 24px 12px; scrollbar-width: thin; scrollbar-color: var(--wood-2) transparent; }
+  .moon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: radial-gradient(circle, rgba(232,180,106,.24), rgba(232,180,106,.04) 70%); color: var(--lamp); }
+  .moon svg { width: 22px; height: 22px; }
+  .welcome h2 { margin-top: 20px; font-family: var(--display); font-weight: 400; font-size: 25px; line-height: 1.4; }
+  .welcome > p { margin-top: 8px; color: var(--linen-2); font-size: 15px; line-height: 1.7; }
+  .topics { display: grid; gap: 8px; margin-top: 24px; }
+  .topic {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+    width: 100%; padding: 16px 18px; border: 1px solid var(--hair); border-radius: var(--r-lg);
+    background: rgba(237,228,211,.025); text-align: left; cursor: pointer;
+    transition: border-color .25s, background-color .25s;
+  }
+  .topic small { display: block; color: var(--linen-3); font-size: 13px; line-height: 1.5; }
+  .topic strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 600; line-height: 1.45; }
+  .topic svg { width: 18px; height: 18px; color: var(--linen-3); transition: color .25s, transform .35s var(--ease); }
+  .topic:hover { border-color: var(--brass-2); background: rgba(232,180,106,.07); }
+  .topic:hover svg { color: var(--lamp); transform: translateX(3px); }
+  .chat.is-wide .topics, .chat.is-solo .topics { grid-template-columns: repeat(3, 1fr); }
+  .chat.is-wide .topic svg, .chat.is-solo .topic svg { display: none; }
+  .is-talking .welcome { display: none; }
+
+  .msgs { display: flex; flex-direction: column; gap: 18px; }
+  .msg { animation: rise .5s var(--ease) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .msg.user { align-self: flex-end; max-width: 86%; padding: 11px 17px; border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-lg); background: var(--wood-2); font-size: 15px; }
+  .msg.bot { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .msg.bot .av { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(232,180,106,.14); color: var(--lamp); }
+  .msg.bot .av svg { width: 14px; height: 14px; }
+  .bot-text { padding-top: 2px; font-size: 15px; line-height: 1.75; }
+  .bot-text p + p { margin-top: 8px; }
+  .src { display: block; margin-top: 10px; color: var(--linen-3); font-size: 12.5px; letter-spacing: .02em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chips .pill { background: transparent; min-height: 36px; padding: 7px 14px; font-size: 13.5px; }
+  .pill.solid { border-color: transparent; background: var(--lamp); color: var(--lamp-ink); font-weight: 600; }
+  .pill.solid:hover { background: var(--lamp-hi); color: var(--lamp-ink); }
+  .typing { display: inline-flex; gap: 5px; padding-top: 11px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--linen-3); animation: blink 1.4s infinite ease-in-out; }
+  .typing i:nth-child(2) { animation-delay: .2s; }
+  .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+  .inquiry { display: grid; gap: 8px; margin-top: 14px; padding: 16px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--walnut); }
+  .inquiry label { color: var(--linen-3); font-size: 12.5px; }
+  .inquiry input, .inquiry textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--brass); border-radius: var(--r-md); background: #0F0C0A; font-size: 14.5px; resize: vertical; }
+  .inquiry input:focus, .inquiry textarea:focus { outline: none; border-color: var(--lamp); }
+  .inquiry .pill { justify-self: start; margin-top: 4px; }
+
+  .chat-foot { padding: 10px 16px 14px; }
+  .composer { display: flex; align-items: center; gap: 8px; padding: 5px 5px 5px 20px; border: 1px solid var(--brass); border-radius: 999px; background: #0F0C0A; transition: border-color .25s; }
+  .composer:focus-within { border-color: var(--lamp); }
+  .composer input { flex: 1; min-width: 0; height: 44px; border: 0; background: none; font-size: 15.5px; }
+  .composer input:focus { outline: none; }
+  .composer input::placeholder { color: var(--linen-3); }
+  .send { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--wood-2); color: var(--linen-3); cursor: pointer; transition: background-color .25s, color .25s; }
+  .send svg { width: 18px; height: 18px; }
+  .composer.has-text .send { background: var(--lamp); color: var(--lamp-ink); }
+  .chat-note { margin-top: 9px; color: var(--linen-3); font-size: 12.5px; text-align: center; }
+  .chat-note button { padding: 0; border: 0; background: none; color: var(--linen-2); font-size: inherit; text-decoration: underline; text-decoration-color: var(--brass-2); text-underline-offset: 3px; cursor: pointer; }
+  .chat-note button:hover { color: var(--lamp); }
+
+  .toast { position: fixed; left: 50%; bottom: 92px; z-index: 60; padding: 12px 20px; border: 1px solid var(--brass); border-radius: 999px; background: var(--wood); font-size: 14px; translate: -50% 12px; opacity: 0; pointer-events: none; transition: opacity .3s, translate .4s var(--ease); }
+  .toast.is-on { opacity: 1; translate: -50% 0; }
+
+  /* ===== 반응형 ===== */
+  @media (min-width: 720px) {
+    :root { --gutter: 40px; }
+    .night-log li { grid-template-columns: minmax(250px, 3fr) 7fr; }
+    .answers li { grid-template-columns: 5fr 7fr; }
+  }
+  @media (min-width: 960px) {
+    :root { --header: 72px; }
+    .nav { display: flex; }
+    .menu-btn, .mobile-nav { display: none !important; }
+    .hero { align-items: center; padding-block: 72px 96px; }
+    .listen { grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; }
+    .faq-grid { grid-template-columns: 4fr 7fr; gap: 80px; align-items: start; }
+    .faq-side { position: sticky; top: calc(var(--header) + 40px); }
+  }
+  @media (max-width: 719px) {
+    .reflect { width: 80%; }
+    .lamp-glow { right: -60vw; top: -50vw; width: 170vw; }
+    .hero { padding-top: 160px; }
+    .ask-btn span { display: none; }
+    .ask-btn { width: 48px; padding: 0; justify-content: center; }
+    .notify-row { flex-direction: column; }
+  }
+  @media (max-width: 560px) {
+    .chat, .chat.is-wide { right: 0; bottom: 0; width: 100%; height: 100svh; border: 0; border-radius: 0; }
+    .chat [data-act="expand"] { display: none; }
+    .launcher { right: 16px; bottom: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<p class="demo-bar">챗봇 시연용 데모 · 실제 슬리피 홈페이지가 아니며, 답변은 임시 자료 기반이고 문의는 실제로 전송되지 않아요</p>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="wordmark" href="#top" aria-label="SLEEPY 처음으로">SLEEPY</a>
+    <nav class="nav" aria-label="주요 메뉴">
+      <a href="#about">회사 소개</a>
+      <a href="#tech">기술</a>
+      <a href="#product">제품</a>
+      <a href="#chatbot" data-solo>챗봇 단독 화면</a>
+      <a href="#admin" data-admin>관리</a>
+    </nav>
+    <button class="menu-btn" type="button" aria-label="메뉴" aria-expanded="false" aria-controls="mobile-nav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9h16M4 15h16"/></svg>
+    </button>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="모바일 메뉴">
+    <a href="#about">회사 소개</a>
+    <a href="#tech">기술</a>
+    <a href="#product">제품</a>
+    <a href="#chatbot" data-solo>챗봇 단독 화면</a>
+    <a href="#admin" data-admin>관리</a>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ===== HERO ===== -->
+  <section class="hero turndown" aria-labelledby="hero-title">
+    <canvas class="night" aria-hidden="true"></canvas>
+    <div class="mullions" aria-hidden="true"></div>
+    <div class="lamp-glow" aria-hidden="true"></div>
+    <div class="reflect" aria-hidden="true"></div>
+    <div class="ceiling" aria-hidden="true"></div>
+
+    <div class="wrap">
+      <h1 id="hero-title" class="display">앱 없이,<br>귀에 꽂기만 <span>하세요</span></h1>
+      <p class="hero-sub">디지털 귀마개 슬리비는 약물이 아닌 소리, 양이성 음향으로 잠드는 밤을 돕습니다.</p>
+
+      <div class="desk">
+        <form class="desk-form" data-ask-form>
+          <label class="sr-only" for="desk-input">슬리비에 대해 질문하기</label>
+          <input id="desk-input" type="text" placeholder="슬리비에 대해 무엇이든 물어보세요" autocomplete="off" maxlength="300">
+          <button class="ask-btn" type="submit" aria-label="질문 보내기"><span>물어보기</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+        <div class="suggest">
+          <button class="pill" type="button" data-ask="스마트폰이나 앱이 꼭 필요한가요?">스마트폰이나 앱이 꼭 필요한가요?</button>
+          <button class="pill" type="button" data-ask="옆으로 누워도 불편하지 않나요?">옆으로 누워도 불편하지 않나요?</button>
+          <button class="pill" type="button" data-ask="양이성 음향이란 무엇인가요?">양이성 음향이 뭔가요?</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 문제 ===== -->
+  <section class="section problem" id="problem" aria-labelledby="problem-title">
+    <div class="wrap">
+      <h2 id="problem-title" class="section-title display">잠들지 못하는 밤은<br>이렇게 흘러갑니다</h2>
+      <ol class="night-log">
+        <li>
+          <time datetime="23:40">23:40</time>
+          <div><h3>불을 끄고 누웠지만, 정신은 또렷합니다</h3><p>몸은 피곤한데 잠이 오지 않아 한참을 뒤척입니다.</p></div>
+        </li>
+        <li>
+          <time datetime="01:15">01:15</time>
+          <div><h3>수면제를 떠올리지만, 매일 기댈까 걱정됩니다</h3><p>약이 아닌 다른 방법은 없을지 고민하게 됩니다.</p></div>
+        </li>
+        <li>
+          <time datetime="03:02">03:02</time>
+          <div><h3>결국 휴대폰을 켭니다</h3><p>수면 앱과 영상을 찾다가 화면 불빛에 오히려 잠이 달아납니다.</p></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== 기능 ===== -->
+  <section class="section feature" id="feature" aria-labelledby="feature-title">
+    <div class="wrap">
+      <div>
+        <h2 id="feature-title" class="section-title display">소리만으로, 설정 없이</h2>
+        <p class="lead">슬리비는 이어버드 안에 양이성 음향을 담았습니다. 휴대폰도, 앱도, 버튼도 필요 없습니다.</p>
+      </div>
+
+      <div class="listen" id="tech">
+        <div class="listen-copy">
+          <h3>양쪽 귀에 조금 다른 소리,<br>그 사이의 느린 박동</h3>
+          <p>왼쪽 귀에 200Hz, 오른쪽 귀에 208Hz를 들려주면 그 차이인 8Hz의 박동감을 느끼게 됩니다. 이것이 양이성 음향입니다.</p>
+          <button class="play" type="button" aria-pressed="false">
+            <i><svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="ic-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg></i>
+            <span>이어폰을 끼고 원리 들어 보기</span>
+          </button>
+          <p class="listen-note">원리를 보여 주는 시연음이며 실제 슬리비의 소리와는 다릅니다. 작은 소리로 30초 동안 재생됩니다.</p>
+        </div>
+        <dl class="scope" aria-label="왼쪽 200Hz, 오른쪽 208Hz, 그 차이 8Hz의 박동">
+          <div class="scope-row"><dt>왼쪽 귀<b>200Hz</b></dt><dd><canvas data-wave="left" aria-hidden="true"></canvas></dd></div>
+          <div class="scope-row"><dt>오른쪽 귀<b>208Hz</b></dt><dd><canvas data-wave="right" aria-hidden="true"></canvas></dd></div>
+          <div class="scope-row beat"><dt>느끼는 박동<b>8Hz</b></dt><dd><canvas data-wave="beat" aria-hidden="true"></canvas></dd></div>
+        </dl>
+      </div>
+
+      <ul class="answers" id="product">
+        <li>
+          <h3>작고 일정한 소리</h3>
+          <p>잠이 오지 않는 밤에도 슬리비는 작은 음량으로 재생되고 볼륨을 따로 조절하지 않습니다. 소리에 집중해도, 신경 쓰지 않고 잠들어도 괜찮습니다.</p>
+        </li>
+        <li>
+          <h3>약물이 아닌 양이성 음향</h3>
+          <p>약에 기대지 않고, 양쪽 귀에 서로 다른 주파수를 들려주는 원리를 활용합니다. 소리로 소음을 덮는 백색소음과도 다릅니다.</p>
+        </li>
+        <li>
+          <h3>꺼내면 바로 작동</h3>
+          <p>스마트폰 연결이나 앱 설치가 없습니다. 충전 케이스에서 꺼내면 자동으로 작동하니 화면을 볼 일이 없습니다.</p>
+        </li>
+      </ul>
+
+      <div class="ritual">
+        <p class="display"><span>케이스에서 꺼내고,</span><br><span>귀에 꽂고,</span><br><em>눈을 감으세요.</em></p>
+        <p class="in-box">구성품 · 본체, 충전 케이스, USB-C 케이블, S/M/L 이어팁, 사용 설명서</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="section faq" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <div class="faq-side">
+        <h2 id="faq-title" class="section-title display">자주 묻는 질문</h2>
+        <p class="lead">여기 없는 질문은 안내 도우미가 답해 드려요. 자료에 없는 내용은 담당자에게 연결해 드립니다.</p>
+        <button class="text-link" type="button" data-open-chat>안내 도우미에게 묻기
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <div class="faq-list">
+        <details name="faq" open>
+          <summary>스마트폰이나 전용 앱이 필요한가요?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <p>아니요. 스마트폰 연결이나 앱 설치 없이 사용할 수 있어요. 이어버드를 충전 케이스에서 꺼내면 자동으로 작동해요.</p>
+        </details>
+        <details name="faq">
+          <summary>잠잘 때 옆으로 누워도 불편하지 않나요?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <p>착용감은 귀 모양과 자세에 따라 다를 수 있어요. 옆으로 누웠을 때 불편하다면 착용 위치를 조정하거나 잠시 빼 주세요.</p>
+        </details>
+        <details name="faq">
+          <summary>잠귀가 밝은 편인데, 주변 소리가 들리나요?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <p>슬리비에는 액티브 노이즈 캔슬링 기능이 없고, 외부 소리를 완전히 차단하는 제품도 아니에요. 일반 귀마개를 착용했을 때처럼 주변 소리가 작게 들릴 수 있어요.</p>
+        </details>
+        <details name="faq">
+          <summary>매일 사용해도 괜찮나요?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <p>네. 착용감에 불편함이 없다면 필요할 때 반복해서 사용하셔도 괜찮아요. 양이성 음향에 대한 반응과 사용 경험에는 개인차가 있을 수 있어요.</p>
+        </details>
+        <details name="faq">
+          <summary>충전은 어떻게 하나요?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+          <p>슬리비를 케이스에 넣으면 충전돼요. 케이스는 USB-C 케이블로 충전하고, 충전 중에는 흰색 LED가 깜박이다가 완료되면 계속 켜져 있어요.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="section cta" id="cta" aria-labelledby="cta-title">
+    <div class="wrap">
+      <h2 id="cta-title" class="section-title display">오늘 밤 궁금한 것,<br>지금 물어보세요</h2>
+      <p class="lead">사용법, 착용감, 충전까지. 슬리비 안내 도우미가 자료를 바탕으로 답해 드려요.</p>
+      <button class="cta-btn" type="button" data-open-chat>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        안내 도우미와 대화하기
+      </button>
+
+      <form class="notify" novalidate>
+        <label for="notify-email">출시 소식은 이메일로 받아 보세요</label>
+        <div class="notify-row">
+          <input id="notify-email" type="email" placeholder="name@example.com" autocomplete="email">
+          <button type="submit">알림 신청</button>
+        </div>
+        <p class="notify-msg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="about">
+  <div class="wrap">
+    <span class="wordmark">SLEEPY</span>
+    <p>SLEEPY는 양이성 음향을 활용한 디지털 귀마개 슬리비(SLEEBY)를 만듭니다.</p>
+    <p>이 페이지는 챗봇 시연용 데모이며 실제 서비스가 아닙니다.</p>
+  </div>
+</footer>
+
+<button class="launcher" type="button" aria-controls="chat" aria-expanded="false">
+  <span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></span>
+  안내 도우미
+</button>
+
+<section class="chat" id="chat" role="dialog" aria-label="슬리비 안내 도우미">
+  <header class="chat-head">
+    <div class="chat-name"><b>SLEEPY</b><span>슬리비 안내 도우미</span></div>
+    <div class="tools">
+      <button class="tool" type="button" data-act="agent" aria-label="상담사 연결" title="상담사 연결"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg></button>
+      <button class="tool" type="button" data-act="reset" aria-label="처음부터 다시" title="처음부터 다시"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6L4 8.5"/><path d="M4 4v4.5h4.5"/></svg></button>
+      <button class="tool" type="button" data-act="expand" aria-label="크게 보기" title="크게 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+      <button class="tool" type="button" data-act="exit-solo" aria-label="홈페이지로 돌아가기" title="홈페이지로 돌아가기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+      <button class="tool" type="button" data-act="close" aria-label="닫기" title="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+  </header>
+
+  <div class="chat-body" aria-live="polite">
+    <div class="welcome">
+      <div class="moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg></div>
+      <h2>무엇이 궁금하세요?</h2>
+      <p>원하는 분야를 먼저 골라 주세요.<br>자료에 없는 내용은 담당자 문의로 연결해 드릴게요.</p>
+      <div class="topics">
+        <button class="topic" type="button" data-topic="product"><span><small>슬리비가 어떤 제품인지</small><strong>제품 소개</strong></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        <button class="topic" type="button" data-topic="usage"><span><small>사용법, 충전, 주의할 점</small><strong>사용 방법 · 유의사항</strong></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+        <button class="topic" type="button" data-topic="buy"><span><small>구매처, 가격, 문의 방법</small><strong>구매 · 문의</strong></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+    </div>
+    <div class="msgs"></div>
+  </div>
+
+  <footer class="chat-foot">
+    <form class="composer">
+      <label class="sr-only" for="chat-input">질문 입력</label>
+      <input id="chat-input" type="text" placeholder="슬리비에 대해 물어보세요" autocomplete="off" maxlength="300">
+      <button class="send" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+    </form>
+    <p class="chat-note">AI 답변은 부정확할 수 있어요 · <button type="button" data-act="inquiry">담당자 문의</button> · <button type="button" data-act="agent">상담사 연결</button></p>
+  </footer>
+</section>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* 임시 FAQ 자료 (sleepy-rag/faq.json에서 추출) */
+const FAQ = [{"q":"음악이나 오디오북을 들으면서 함께 사용할 수 있나요?","a":"SLEEBY는 다른 기기와 연결해 음악이나 오디오북을 재생하는 제품이 아니에요. 내장된 양이성 음향을 단독으로 사용해 주세요.","c":"제품 소개·기능"},{"q":"구성품에는 어떤 것들이 들어 있나요?","a":"기본 구성품에는 SLEEBY 본체, 충전 케이스, USB-C 충전 케이블, S/M/L 이어팁, 사용 설명서 등이 포함되어 있어요.","c":"제품 소개·기능"},{"q":"슬리비를 사용하려면 스마트폰이나 전용 앱이 필요한가요?","a":"아니요. 스마트폰 연결이나 앱 설치 없이 사용할 수 있어요. 이어버드를 충전 케이스에서 꺼내면 자동으로 작동해요.","c":"제품 소개·기능"},{"q":"슬리비는 어떤 원리로 수면과 이완을 돕도록 설계되었나요?","a":"SLEEBY는 잠들기 전 이완을 돕기 위해 ‘양이성 음향’을 활용해요. 양쪽 귀에 주파수가 조금 다른 소리를 들려주면, 두 소리의 차이로 일정한 박동감을 느낄 수 있어요.","c":"제품 소개·기능"},{"q":"제품의 소리나 진동이 옆 사람에게 들리거나 방해될 수 있나요?","a":"","c":"제품 소개·기능"},{"q":"슬리비 소리의 볼륨을 조절할 수 있나요?","a":"아니요. SLEEBY는 작은 음량으로 재생되며, 볼륨을 따로 조절할 수 없어요.","c":"제품 소개·기능"},{"q":"슬리비에 알람 기능이 있나요?","a":"SLEEBY는 별도의 알람 기능을 제공하지 않아요.","c":"제품 소개·기능"},{"q":"양이성 음향이란 무엇인가요?","a":"양쪽 귀에 조금 다른 주파수의 소리를 각각 들려주면, 뇌에서 두 소리의 주파수 차이에 해당하는 박동감을 느끼는 현상을 말해요. 예를 들어 한쪽 귀에 200Hz, 다른 쪽 귀에 208Hz의 소리를 들려주면 그 차이인 8Hz에 해당하는 박동감을 느낄 수 있어요.","c":"제품 소개·기능"},{"q":"뇌파 동조란 무엇이며 슬리비와 어떤 관련이 있나요?","a":"뇌파 동조는 규칙적인 소리 같은 외부 자극에 뇌 활동이 그 리듬을 따라 반응하는 현상을 말해요. SLEEBY는 이 개념에 착안해 양쪽 귀에 주파수가 조금 다른 소리를 들려주도록 설계됐어요.","c":"제품 소개·기능"},{"q":"일반 수면 음악·백색소음과 슬리비는 어떻게 다른가요?","a":"수면 음악이나 백색소음은 편안한 소리를 제공하거나 주변 소음을 덜 느끼게 하는 데 주로 사용돼요. SLEEBY는 양쪽 귀에 서로 다른 주파수의 소리를 제공하는 ‘양이성 음향’의 원리를 활용한다는 점에서 차이가 있어요.","c":"제품 소개·기능"},{"q":"유튜브·앱 양이성 음향 콘텐츠와 슬리비의 차이는 무엇인가요?","a":"SLEEBY는 스마트폰이나 앱에 연결하지 않고 양이성 음향을 제공하는 전용 기기예요. 별도의 재생 기기나 설정 없이 사용할 수 있고, 안정적이고 정밀한 양이성 음향을 제공하도록 설계되었어요.","c":"제품 소개·기능"},{"q":"스마트폰을 연결하지 않으면 소리는 어디에서 나오나요?","a":"양쪽 이어버드가 각각 소리를 생성해요. 충전 케이스에서 꺼내면 자동으로 재생돼요.","c":"제품 소개·기능"},{"q":"재생 소리 주파수는 약 30분 동안 바뀌나요?","a":"","c":"제품 소개·기능"},{"q":"슬리비는 잠들기 전에만 사용하면 되나요?","a":"밤에 잠자리에 들기 전은 물론, 낮에 잠깐 자거나 휴식을 취하고 싶을 때도 사용하실 수 있어요. 양쪽 귀에 착용한 뒤 평소처럼 주무시거나 쉬시면 됩니다. SLEEBY에서 나오는 작은 소리에 집중하셔도 되고, 특별히 신경 쓰지 않으셔도 괜찮아요.","c":"사용 방법"},{"q":"잠든 뒤에도 계속 착용하고 있어도 괜찮나요?","a":"네. 양이성 음향은 전원이 켜진 뒤 약 30분이 지나면 자동으로 꺼져요. 30분 안에 잠드셨다면 착용한 채로 계속 주무셔도 괜찮습니다. 불편하면 빼셔도 되니, 편안한 쪽으로 선택해 주세요.","c":"사용 방법"},{"q":"사용하다가 중간에 빼도 되나요?","a":"네. 사용 중 불편하거나 빼고 싶을 때는 언제든 빼셔도 됩니다.","c":"사용 방법"},{"q":"잠이 들지 않으면 다시 착용해도 되나요?","a":"네. 30분 후 SLEEBY 전원이 자동으로 꺼진 뒤에도 잠이 들지 않거나 졸린 느낌이 없다면 다시 사용하셔도 돼요. SLEEBY를 충전 케이스에 넣었다가 1~2초 후 다시 꺼내 착용하면 양이성 음향이 다시 30분 동안 재생됩니다.","c":"사용 방법"},{"q":"낮잠을 잘 때 사용해도 되나요?","a":"네. 낮잠이나 휴식을 취할 때도 사용하실 수 있어요. 편안한 상태에서 착용해 주세요.","c":"사용 방법"},{"q":"매일 사용해도 괜찮나요?","a":"네. 착용감에 불편함이 없다면 밤이나 일상에서 필요할 때 반복해서 사용하셔도 괜찮아요. 양이성 음향에 대한 반응은 사람마다 다를 수 있으며, 사용 경험에도 개인차가 있을 수 있습니다.","c":"사용 방법"},{"q":"여행할 때 비행기나 기차 안에서 사용해도 되나요?","a":"네. 사용하셔도 돼요. 주변이 시끄러우면 SLEEBY의 양이성 음향이 잘 들리지 않을 수 있지만, 소리가 또렷하게 들리지 않더라도 착용해 사용하실 수 있어요. 다만 안내 방송이나 안전 안내를 들어야 하는 상황에서는 사용을 피해 주세요.","c":"사용 방법"},{"q":"양쪽 이어버드 중 한쪽만 착용해서 사용해도 되나요?","a":"양쪽 이어버드를 모두 착용해 주세요. 양이성 음향을 들으려면 왼쪽 귀와 오른쪽 귀에 서로 다른 주파수의 소리가 각각 전달되어야 해요.","c":"사용 방법"},{"q":"처음 구매한 슬리비를 어떻게 준비하고 사용하나요?","a":"","c":"사용 방법"},{"q":"잠든 것을 감지해서 종료되나요, 정해진 시간이 지나면 꺼지나요?","a":"SLEEBY는 잠든 것을 감지해 꺼지는 방식이 아니에요. 잠들었는지와 관계없이 작동을 시작한 뒤 약 30분 동안 양이성 음향이 계속 재생되고, 정해진 시간이 지나면 자동으로 꺼집니다.","c":"사용 방법"},{"q":"충전이 끝나면 표시등이 어떻게 표시되나요?","a":"케이스를 충전하는 동안에는 흰색 LED가 깜박이고, 충전이 완료되면 흰색 LED가 계속 켜져 있어요.","c":"충전·배터리"},{"q":"충전 케이스를 충전하는 동안 슬리비를 사용해도 되나요?","a":"네. 충전 케이스를 충전하면서 SLEEBY를 꺼내 사용하셔도 돼요.","c":"충전·배터리"},{"q":"충전 케이스를 충전하면서 슬리비도 충전할 수 있나요?","a":"네. 충전 케이스에 케이블을 연결해 충전하는 중에도, 케이블을 연결하지 않은 상태에서도 SLEEBY를 케이스에 넣으면 충전할 수 있어요.","c":"충전·배터리"},{"q":"슬리비가 충전되지 않을 때는 어떻게 하나요?","a":"동봉된 케이블이 제대로 연결됐는지 확인해 주세요. 그래도 충전되지 않으면 고객센터로 문의해 주세요.","c":"충전·배터리"},{"q":"슬리비를 완전히 충전하는 데 얼마나 걸리나요?","a":"","c":"충전·배터리"},{"q":"한 번 충전하면 몇 번이나 사용할 수 있나요?","a":"","c":"충전·배터리"},{"q":"이어버드를 케이스에 넣었는데 한쪽만 충전되지 않아요.","a":"","c":"충전·배터리"},{"q":"충전 케이스의 표시등이 평소와 다르게 표시되면 어떻게 하나요?","a":"","c":"충전·배터리"},{"q":"완전히 충전했는데도 이전보다 사용 시간이 짧아졌어요.","a":"","c":"충전·배터리"},{"q":"충전 중 제품이나 케이스가 따뜻해지는데 괜찮은가요?","a":"","c":"충전·배터리"},{"q":"충전할 때 지켜야 할 주의사항은 무엇인가요?","a":"","c":"충전·배터리"},{"q":"어떤 종류의 케이블로 충전해야 하나요?","a":"USB-C 타입 케이블로 충전하실 수 있어요.","c":"충전·배터리"},{"q":"이어팁은 어떻게 교체하나요?","a":"이어팁을 SLEEBY 본체에서 조심스럽게 분리한 뒤, 사용할 크기의 이어팁을 본체에 맞춰 끼워 주세요. 너무 세게 잡아당기거나 비틀지 않도록 주의해 주세요.","c":"착용·편의성"},{"q":"헤드폰이나 다른 귀마개와 같이 착용할 수 있나요?","a":"SLEEBY는 다른 기기나 귀마개와 함께 착용하도록 설계된 제품은 아니에요. 함께 착용하면 불편하거나 제품을 의도한 방식으로 사용하기 어려울 수 있으니 단독으로 착용해 주세요.","c":"착용·편의성"},{"q":"양쪽 귀의 크기가 다른데, 이어팁을 서로 다른 크기로 사용해도 되나요?","a":"네. 좌우 귀에 잘 맞는 크기가 다르다면 각 귀에 맞는 이어팁을 따로 사용하셔도 돼요. 다만 SLEEBY 본체의 ‘L/R’ 표시는 올바르게 맞춰 착용해 주세요.","c":"착용·편의성"},{"q":"귀가 작은 편인데 잘 맞을까요?","a":"귀 모양과 크기는 사람마다 달라 착용감에 차이가 있을 수 있어요. 동봉된 S/M/L 이어팁 중 귀에 편안하게 맞는 크기를 선택해 주세요.","c":"착용·편의성"},{"q":"잠잘 때 옆으로 누워도 불편하지 않나요?","a":"착용감은 귀 모양과 자세에 따라 다를 수 있어요. 옆으로 누웠을 때 불편하다면 착용 위치를 조정하거나 잠시 빼 주세요.","c":"착용·편의성"},{"q":"슬리비를 귀에 착용했을 때 이물감이 느껴지면 어떻게 하나요?","a":"동봉된 이어팁 중 귀에 맞는 크기를 선택해 주세요.","c":"착용·편의성"},{"q":"자는 동안 이어버드가 귀에서 빠지면 어떻게 해야 하나요?","a":"","c":"착용·편의성"},{"q":"이어팁이 본체에서 자꾸 분리되면 어떻게 해야 하나요?","a":"","c":"착용·편의성"},{"q":"슬리비에서 소리가 나오지 않을 때는 어떻게 하나요?","a":"사용에 불편을 드려 죄송합니다. 고객센터로 문의해 주시면 확인을 도와드릴게요.","c":"고장·문제 해결"},{"q":"슬리비의 전원이 켜지지 않을 때는 어떻게 하나요?","a":"LED 표시를 확인해 주세요. 처음 사용하는 제품이라면 1시간 이상 충전해 보시고, 그래도 켜지지 않으면 고객센터로 문의해 주세요.","c":"고장·문제 해결"},{"q":"수령 제품의 상단 캡이 분리됨","a":"분리된 부분이 보이도록 사진을 찍어 고객센터에 문의해 주세요.","c":"고장·문제 해결"},{"q":"슬리비에서 소리가 거의 들리지 않는데 정상인가요?","a":"네. SLEEBY는 작은 소리로 재생되며, 이는 정상적인 작동 상태예요. 별도의 볼륨 조절 기능은 제공하지 않습니다.","c":"고장·문제 해결"},{"q":"처음에는 잘 작동했는데 한쪽 이어버드에서 소리가 나지 않아요.","a":"사용에 불편을 드려 죄송합니다. 고객센터로 문의해 주시면 확인을 도와드릴게요.","c":"고장·문제 해결"},{"q":"양쪽 이어버드의 소리 크기가 서로 다른데 정상인가요?","a":"","c":"고장·문제 해결"},{"q":"사용 중 소리가 끊기거나 지지직거리는 잡음이 들리면 어떻게 하나요?","a":"","c":"고장·문제 해결"},{"q":"잠귀가 밝은 편인데, 주변 소리가 들리나요?","a":"SLEEBY에는 액티브 노이즈 캔슬링 기능이 없고, 외부 소리를 완전히 차단하는 제품도 아니에요. 일반 귀마개를 착용했을 때처럼 주변 소리가 작게 들릴 수 있으며, 소리가 들리는 정도는 착용 상태와 개인차에 따라 달라질 수 있습니다.","c":"안전·건강·효과"},{"q":"귀 질환이 있거나 귀가 민감한 사람도 사용할 수 있나요?","a":"귀에 통증이나 질환이 있거나 착용 중 불편함이 느껴지면 사용을 중단해 주세요. 사용해도 괜찮을지 걱정되신다면 의료 전문가와 상담해 주세요.","c":"안전·건강·효과"},{"q":"슬리비를 사용하면 누구나 30분 안에 잠들 수 있나요?","a":"잠드는 데 걸리는 시간은 사람마다 달라요. 약 30분은 이어버드에서 소리가 재생되는 시간이에요.","c":"안전·건강·효과"},{"q":"어린이나 임산부도 슬리비를 사용할 수 있나요?","a":"","c":"안전·건강·효과"},{"q":"제품을 사용해도 수면에 도움이 되는지 모르겠어요.","a":"","c":"안전·건강·효과"},{"q":"착용하면 귀가 눌리거나 아픈데 계속 사용해도 되나요?","a":"","c":"안전·건강·효과"},{"q":"제품 사용 중 화재경보기나 알람 소리를 들을 수 있나요?","a":"","c":"안전·건강·효과"},{"q":"슬리비는 의료기기인가요, 일반 웰니스 제품인가요?","a":"","c":"안전·건강·효과"},{"q":"슬리비는 국가통합인증마크 등 어떤 안전 인증을 받았나요?","a":"","c":"안전·건강·효과"},{"q":"심장질환 또는 심장박동기 등 의료적 주의 대상이 사용해도 되나요?","a":"","c":"안전·건강·효과"},{"q":"하루 사용 권장 시간이나 사용 횟수 제한이 있나요?","a":"","c":"안전·건강·효과"},{"q":"운전 중 슬리비를 착용해도 되나요?","a":"","c":"안전·건강·효과"},{"q":"어린이 또는 반려동물 주변에 두거나 사용해도 안전한가요?","a":"","c":"안전·건강·효과"},{"q":"착용 중 귀가 먹먹하거나 어지럽다면 어떻게 해야 하나요?","a":"","c":"안전·건강·효과"},{"q":"슬리비는 소리 자극 제품인가요, 전기 자극 제품인가요?","a":"SLEEBY는 귀에 소리를 들려주는 방식이에요. 양쪽 귀에 서로 다른 주파수의 음향을 제공하며, 몸에 직접 전기 자극을 가하는 방식의 제품은 아닙니다.","c":"안전·건강·효과"},{"q":"수면제나 수면 보조제를 복용하면서 사용해도 되나요?","a":"","c":"안전·건강·효과"},{"q":"불면증이 있는 사람도 사용해도 되나요?","a":"","c":"안전·건강·효과"},{"q":"슬리비는 어디에서 구매할 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"슬리비 제품 가격은 얼마인가요?","a":"","c":"구매·배송·AS"},{"q":"제품을 주문하면 배송까지 얼마나 걸리나요?","a":"","c":"구매·배송·AS"},{"q":"제품이 귀에 맞지 않으면 교환하거나 환불받을 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"제품이 불량이면 기존 제품을 반납해야 하나요?","a":"","c":"구매·배송·AS"},{"q":"한쪽 이어버드를 분실했을 때 개별 구매가 가능한가요?","a":"","c":"구매·배송·AS"},{"q":"충전 케이스를 분실하거나 고장 냈을 때 별도 구매할 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"배송지 변경이나 주문 취소는 언제까지 가능한가요?","a":"","c":"구매·배송·AS"},{"q":"법인·대량 구매 또는 선물 포장이 가능한가요?","a":"","c":"구매·배송·AS"},{"q":"해외 배송도 가능한가요?","a":"","c":"구매·배송·AS"},{"q":"무상 수리 보증 기간은 얼마나 되나요?","a":"","c":"구매·배송·AS"},{"q":"단순 변심으로 교환·반품할 수 있나요? 배송비는 얼마인가요?","a":"","c":"구매·배송·AS"},{"q":"충전 케이블·이어팁·기타 부품을 개별 구매할 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"반품 또는 환불 완료까지 얼마나 걸리나요?","a":"","c":"구매·배송·AS"},{"q":"수면 효과를 느끼지 못했거나 만족하지 못하면 환불받을 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"상담원 또는 1:1 문의는 어디에서 신청할 수 있나요?","a":"","c":"구매·배송·AS"},{"q":"슬리비 본체는 어떻게 청소하면 되나요?","a":"SLEEBY는 방수 기능이 없어요. 흐르는 물에 씻거나 물에 담그면 고장 날 수 있으니 피해주세요. 안경을 닦듯이 세척액이나 물티슈를 묻혀 닦는 방법은 괜찮습니다.","c":"관리·보관"},{"q":"사용하지 않을 때는 어떻게 보관하는 게 좋나요?","a":"사용하지 않을 때는 본체를 충전 케이스에 넣어 보관해 주세요. 습기가 많거나 온도가 높은 곳은 피해 주세요.","c":"관리·보관"},{"q":"충전 단자에 먼지나 이물질이 묻었을 때 어떻게 청소하나요?","a":"","c":"관리·보관"},{"q":"제품을 장기간 사용하지 않을 때 배터리는 어떻게 관리하나요?","a":"장기간 보관할 때의 권장 충전량과 재충전 주기는 제품 설명서나 고객센터에서 확인해 주세요.","c":"관리·보관"},{"q":"슬리비는 방수가 되나요? 물세척할 수 있나요?","a":"","c":"관리·보관"},{"q":"이어팁은 어떻게 세척하고, 언제 교체해야 하나요?","a":"","c":"관리·보관"},{"q":"이어팁은 따로 구매가 가능한가요?","a":"이어팁만 따로 구매할 수 있는지는 고객센터에 확인해 주세요. 문의하실 때 필요한 이어팁 크기를 함께 알려 주세요.","c":"관리·보관"}];
+
+(function () {
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const toastEl = $(".toast");
+  let toastT;
+  const toast = (t) => { toastEl.textContent = t; toastEl.classList.add("is-on"); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("is-on"), 2600); };
+
+  /* 메뉴 */
+  const menuBtn = $(".menu-btn"), mnav = $("#mobile-nav");
+  menuBtn.addEventListener("click", () => menuBtn.setAttribute("aria-expanded", mnav.classList.toggle("is-open")));
+  $$("a", mnav).forEach((a) => a.addEventListener("click", () => { mnav.classList.remove("is-open"); menuBtn.setAttribute("aria-expanded", false); }));
+  $$("[data-admin]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); toast("관리 화면은 데모에서 준비 중이에요"); }));
+
+  /* 창밖 도시 */
+  const night = $(".night");
+  function drawNight() {
+    const r = night.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    night.width = r.width * dpr; night.height = r.height * dpr;
+    const c = night.getContext("2d"); c.scale(dpr, dpr);
+    const W = r.width, H = r.height;
+    let seed = 23; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const sky = c.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#0B0908"); sky.addColorStop(.4, "#120F0C"); sky.addColorStop(1, "#1E1813");
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    /* 먼 건물에서 가까운 건물 순서: 멀수록 어둡고 불빛이 작고 흐리다 */
+    const layers = [
+      { n: 9, top: [.42, .62], w: [.06, .12], tone: 17, size: 2, gap: 6, lit: .16, alpha: .35 },
+      { n: 6, top: [.34, .55], w: [.09, .16], tone: 22, size: 3, gap: 8, lit: .2, alpha: .6 },
+      { n: 4, top: [.36, .6], w: [.12, .2], tone: 27, size: 4, gap: 11, lit: .24, alpha: .85 }
+    ];
+    layers.forEach((L) => {
+      for (let b = 0; b < L.n; b++) {
+        const w = W * (L.w[0] + rnd() * (L.w[1] - L.w[0]));
+        const x = (b / L.n) * W + (rnd() - .5) * W / L.n - w / 4;
+        const top = H * (L.top[0] + rnd() * (L.top[1] - L.top[0]));
+        c.fillStyle = `rgb(${L.tone},${L.tone - 4},${L.tone - 8})`;
+        c.fillRect(x, top, w, H - top);
+        for (let wy = top + L.gap; wy < H; wy += L.gap) {
+          const fall = 1 - (wy - top) / (H - top) * .5;
+          for (let wx = x + L.gap / 2; wx < x + w - L.size; wx += L.gap) {
+            if (rnd() < L.lit * (wx < W * .55 ? .45 : 1)) {
+              const cool = rnd() < .13;
+              const a = cool ? Math.max(.38, (.5 + rnd() * .3) * L.alpha * fall) : (.35 + rnd() * .65) * L.alpha * fall;
+              c.fillStyle = cool ? `rgba(168,190,220,${a})` : `rgba(246,${182 + rnd() * 36},${108 + rnd() * 40},${a})`;
+              c.fillRect(wx, wy, L.size, L.size + 1);
+            }
+          }
+        }
+      }
+    });
+  }
+  drawNight();
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { drawNight(); sizeScopes(); }, 200); });
+
+  /* 양이성 음향 파형 + 시연음 */
+  const scopes = $$("[data-wave]");
+  function sizeScopes() { scopes.forEach((cv) => { const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2); cv.width = r.width * d; cv.height = r.height * d; }); }
+  sizeScopes();
+  let phase = 0, playing = false, raf = 0;
+  function drawScopes() {
+    scopes.forEach((cv) => {
+      const c = cv.getContext("2d"), W = cv.width, H = cv.height, k = cv.dataset.wave, d = W / cv.getBoundingClientRect().width;
+      c.clearRect(0, 0, W, H);
+      c.lineWidth = 1.6 * d; c.strokeStyle = k === "beat" ? "#E8B46A" : "#C4B7A2";
+      c.beginPath();
+      for (let x = 0; x <= W; x += 2) {
+        const t = x / W;
+        let y;
+        if (k === "left") y = Math.sin((t * 20 + phase * 1.0) * Math.PI * 2);
+        else if (k === "right") y = Math.sin((t * 20.8 + phase * 1.04) * Math.PI * 2);
+        else { const env = Math.cos((t * 0.8 + phase * 0.04) * Math.PI * 2); y = Math.sin((t * 20.4 + phase) * Math.PI * 2) * env; }
+        const py = H / 2 + y * (H / 2 - 4 * d);
+        x ? c.lineTo(x, py) : c.moveTo(x, py);
+      }
+      c.stroke();
+    });
+  }
+  drawScopes();
+  function loop() { phase += 0.012; drawScopes(); raf = requestAnimationFrame(loop); }
+
+  const playBtn = $(".play");
+  let ctx, nodes, stopT;
+  function stopTone() {
+    if (!nodes) return;
+    const now = ctx.currentTime;
+    nodes.gain.gain.cancelScheduledValues(now);
+    nodes.gain.gain.setTargetAtTime(0, now, 0.3);
+    const n = nodes; setTimeout(() => { n.l.stop(); n.r.stop(); }, 1500);
+    nodes = null; playing = false; clearTimeout(stopT);
+    playBtn.setAttribute("aria-pressed", "false");
+    $("span", playBtn).textContent = "이어폰을 끼고 원리 들어 보기";
+    cancelAnimationFrame(raf);
+  }
+  playBtn.addEventListener("click", () => {
+    if (playing) return stopTone();
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume();
+    const gain = ctx.createGain(); gain.gain.value = 0; gain.connect(ctx.destination);
+    const make = (f, pan) => { const o = ctx.createOscillator(); o.frequency.value = f; const p = ctx.createStereoPanner(); p.pan.value = pan; o.connect(p).connect(gain); o.start(); return o; };
+    nodes = { gain, l: make(200, -1), r: make(208, 1) };
+    gain.gain.setTargetAtTime(0.05, ctx.currentTime, 0.8);
+    playing = true; playBtn.setAttribute("aria-pressed", "true");
+    $("span", playBtn).textContent = "멈추기";
+    if (!reduce) loop();
+    stopT = setTimeout(stopTone, 30000);
+  });
+
+  /* 스크롤 등장 */
+  const log = $(".night-log");
+  if (!reduce && "IntersectionObserver" in window && log.getBoundingClientRect().top > innerHeight) {
+    log.classList.add("is-waiting");
+    const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { log.classList.replace("is-waiting", "is-lit"); io.disconnect(); } }, { rootMargin: "0px 0px -25% 0px" });
+    io.observe(log);
+  }
+
+  /* 출시 알림 (데모) */
+  $(".notify").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const i = $("#notify-email"), m = $(".notify-msg");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(i.value.trim())) { m.textContent = "이메일 주소를 다시 확인해 주세요."; i.focus(); return; }
+    m.textContent = "신청을 받았어요. 데모라서 실제로 저장되지는 않아요."; i.value = "";
+  });
+
+  /* ===== 안내 도우미 ===== */
+  const chat = $("#chat"), body = $(".chat-body"), msgs = $(".msgs");
+  const form = $(".composer"), input = $("#chat-input"), launcher = $(".launcher");
+  const TOPICS = {
+    product: { label: "제품 소개", cats: ["제품 소개·기능", "안전·건강·효과"] },
+    usage: { label: "사용 방법 · 유의사항", cats: ["사용 방법", "충전·배터리", "착용·편의성", "관리·보관", "고장·문제 해결"] },
+    buy: { label: "구매 · 문의", cats: ["구매·배송·AS"] }
+  };
+  const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
+
+  function setOpen(open) {
+    document.body.classList.toggle("chat-open", open);
+    launcher.setAttribute("aria-expanded", open);
+    if (open) setTimeout(() => input.focus({ preventScroll: true }), 300);
+    else launcher.focus({ preventScroll: true });
+  }
+  launcher.addEventListener("click", () => setOpen(true));
+  $$("[data-open-chat]").forEach((b) => b.addEventListener("click", () => setOpen(true)));
+
+  function setSolo(on) {
+    chat.classList.toggle("is-solo", on); chat.classList.remove("is-wide");
+    if (on) setOpen(true);
+    else if (location.hash === "#chatbot") history.replaceState(null, "", location.pathname);
+  }
+  $$("[data-solo]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); history.replaceState(null, "", "#chatbot"); setSolo(true); }));
+
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const down = () => body.scrollTo({ top: body.scrollHeight, behavior: reduce ? "auto" : "smooth" });
+
+  function addUser(t) {
+    chat.classList.add("is-talking");
+    const el = document.createElement("div"); el.className = "msg user"; el.textContent = t;
+    msgs.append(el); down();
+  }
+  function addBot(html, wait = 650) {
+    chat.classList.add("is-talking");
+    const el = document.createElement("div"); el.className = "msg bot";
+    el.innerHTML = `<span class="av" aria-hidden="true">${MOON}</span><div class="bot-text"><span class="typing" aria-label="답변 작성 중"><i></i><i></i><i></i></span></div>`;
+    msgs.append(el); down();
+    return new Promise((res) => setTimeout(() => { $(".bot-text", el).innerHTML = html; down(); res(el); }, reduce ? 0 : wait));
+  }
+  const chips = (list) => `<div class="chips">${list.map((q) => `<button type="button" class="pill" data-ask="${esc(q)}">${esc(q)}</button>`).join("")}</div>`;
+  const toDesk = '<div class="chips"><button type="button" class="pill solid" data-act="inquiry">담당자에게 문의 남기기</button></div>';
+
+  /* 글자 두 개씩 묶어 비교하는 간단한 검색 (RAG 연결 전 임시) */
+  const norm = (s) => s.toLowerCase().replace(/sleeby|슬리비|sleepy|슬리피/g, "").replace(/[^0-9a-z가-힣]/g, "");
+  const grams = (s) => { const n = norm(s), g = new Set(); for (let i = 0; i < n.length - 1; i++) g.add(n.slice(i, i + 2)); return g; };
+  const INDEX = FAQ.map((f) => ({ ...f, g: grams(f.q) }));
+  const search = (t) => { const g = grams(t); if (!g.size) return []; return INDEX.map((f) => { let h = 0; g.forEach((x) => f.g.has(x) && h++); return { f, s: (2 * h) / (g.size + f.g.size) }; }).sort((a, b) => b.s - a.s); };
+
+  async function answer(t) {
+    const ranked = search(t), top = ranked[0];
+    if (!top || top.s < 0.22) return addBot(`<p>아직 제가 가진 자료에서는 답을 찾지 못했어요.</p><p>질문을 조금 바꿔 물어보시거나, 담당자에게 문의를 남겨 주세요.</p>${toDesk}`);
+    const f = top.f;
+    if (!f.a) return addBot(`<p>「${esc(f.q)}」는 아직 확인 중인 내용이라 정확히 답하기 어려워요.</p><p>담당자가 확인해 안내해 드릴 수 있도록 문의를 남겨 주세요.</p>${toDesk}`);
+    const rel = ranked.slice(1, 4).filter((r) => r.s > 0.2 && r.f.a).map((r) => r.f.q);
+    return addBot(`<p>${esc(f.a)}</p><span class="src">출처 · Sleeby FAQ (${esc(f.c)})</span>${rel.length ? chips(rel) : ""}`, 700 + Math.min(f.a.length * 4, 600));
+  }
+  function ask(t) { setOpen(true); addUser(t); answer(t); }
+
+  async function openTopic(key) {
+    const tp = TOPICS[key]; addUser(tp.label);
+    const pool = FAQ.filter((f) => tp.cats.includes(f.c)), ans = pool.filter((f) => f.a);
+    if (key === "buy") return addBot(`<p>구매, 가격, 배송 안내는 아직 자료가 준비 중이에요.</p><p>궁금한 점을 남겨 주시면 담당자가 확인해 안내해 드릴게요.</p>${chips(pool.slice(0, 3).map((f) => f.q))}${toDesk}`);
+    return addBot(`<p>${tp.label}에 대해 자주 묻는 질문이에요. 골라 보시거나 직접 물어보셔도 돼요.</p>${chips((ans.length >= 3 ? ans : pool).slice(0, 5).map((f) => f.q))}`);
+  }
+
+  async function inquiry() {
+    const el = await addBot(`<p>문의 내용을 남겨 주시면 담당자가 확인 후 연락드릴게요.</p>
+      <form class="inquiry" novalidate>
+        <label for="iq-mail">답변 받을 이메일</label>
+        <input id="iq-mail" type="email" placeholder="name@example.com" autocomplete="email">
+        <label for="iq-text">문의 내용</label>
+        <textarea id="iq-text" rows="3" placeholder="궁금한 점을 적어 주세요"></textarea>
+        <button class="pill solid" type="submit">문의 남기기</button>
+      </form>`, 400);
+    const f = $(".inquiry", el);
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("#iq-mail", f).value.trim()) || !$("#iq-text", f).value.trim()) { toast("이메일과 문의 내용을 모두 적어 주세요"); return; }
+      f.replaceWith(Object.assign(document.createElement("p"), { textContent: "문의가 접수되었어요." }));
+      await addBot("<p>남겨 주셔서 고마워요. 데모 화면이라 실제로 전송되지는 않아요.</p><p>편안한 밤 보내세요.</p>");
+    });
+  }
+  async function agent() {
+    addUser("상담사 연결");
+    await addBot(`<p>상담사 실시간 연결은 데모에서 지원하지 않아요.</p><p>대신 담당자 문의를 남겨 주시면 확인 후 답변드릴게요.</p>${toDesk}`);
+  }
+  function reset() { msgs.innerHTML = ""; chat.classList.remove("is-talking"); body.scrollTop = 0; input.value = ""; form.classList.remove("has-text"); }
+
+  chat.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.topic) return openTopic(b.dataset.topic);
+    if (b.dataset.ask) { addUser(b.dataset.ask); return answer(b.dataset.ask); }
+    switch (b.dataset.act) {
+      case "close": return setOpen(false);
+      case "expand": chat.classList.toggle("is-wide"); b.setAttribute("aria-label", chat.classList.contains("is-wide") ? "작게 보기" : "크게 보기"); return;
+      case "exit-solo": return setSolo(false);
+      case "reset": return reset();
+      case "agent": return agent();
+      case "inquiry": return inquiry();
+    }
+  });
+  input.addEventListener("input", () => form.classList.toggle("has-text", !!input.value.trim()));
+  form.addEventListener("submit", (e) => { e.preventDefault(); const t = input.value.trim(); if (!t) return; input.value = ""; form.classList.remove("has-text"); addUser(t); answer(t); });
+
+  /* 히어로의 프런트 데스크 */
+  const deskInput = $("#desk-input");
+  $("[data-ask-form]").addEventListener("submit", (e) => { e.preventDefault(); const t = deskInput.value.trim(); if (!t) { deskInput.focus(); return; } deskInput.value = ""; ask(t); });
+  $$(".suggest .pill").forEach((b) => b.addEventListener("click", () => ask(b.dataset.ask)));
+
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.classList.contains("chat-open") && !chat.classList.contains("is-solo")) setOpen(false); });
+  if (location.hash === "#chatbot") setSolo(true);
+})();
+</script>
+</body>
+</html>
