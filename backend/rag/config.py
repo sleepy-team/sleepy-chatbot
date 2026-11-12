@@ -21,11 +21,16 @@ class EnvSettings(BaseSettings):
 
 class EmbeddingConfig(BaseModel):
     model: str
+    timeout: float | None = None
+    max_retries: int | None = None
 
 
 class LLMConfig(BaseModel):
     model: str
     temperature: float = 0.0
+    # 네트워크가 불안정할 때를 위한 값. None이면 라이브러리 기본값을 쓴다(기존 동작)
+    timeout: float | None = None
+    max_retries: int | None = None
 
 
 class ChunkingConfig(BaseModel):
@@ -45,6 +50,12 @@ class RetrievalConfig(BaseModel):
     top_k: int = 3
     bm25_weight: float = 0.4
     vector_weight: float = 0.6
+    # 검색 전에 질문 속 구어·오타를 표준어로 바꾼다 (예: 어플 -> 앱). LLM에는 원문 질문을 보낸다
+    query_synonyms: dict[str, str] = {}
+    # 기존 설정(v1)의 동작을 바꾸지 않도록 기본값은 이전 동작과 같다
+    bm25_tokenizer: Literal["whitespace", "kiwi"] = "whitespace"
+    # 앙상블 전에 각 검색기가 top_k의 몇 배를 가져올지 (마지막에 top_k로 자른다)
+    candidate_multiplier: int = 1
 
 
 class RagConfig(BaseModel):
@@ -56,6 +67,10 @@ class RagConfig(BaseModel):
     chunking: ChunkingConfig = ChunkingConfig()
     qdrant: QdrantConfig = QdrantConfig()
     retrieval: RetrievalConfig = RetrievalConfig()
+    # structured: 모델이 답변 유형(mode)과 답변을 함께 낸다. text: 답변 문장만 낸다(기존 동작)
+    answer_format: Literal["text", "structured"] = "text"
+    # 같은 세션의 최근 몇 턴을 프롬프트에 넣을지 (0이면 사용하지 않는다: 기존 동작)
+    history_turns: int = 0
 
     @property
     def data_path(self) -> Path:

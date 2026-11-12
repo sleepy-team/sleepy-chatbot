@@ -13,6 +13,7 @@ from pydantic import ConfigDict
 from qdrant_client import AsyncQdrantClient
 
 from rag.config import RetrievalConfig
+from rag.tokenizers import get_tokenizer
 from rag.vectorstore import CONTENT_KEY, METADATA_KEY
 
 
@@ -54,14 +55,21 @@ def build_retriever(
     embeddings: Embeddings,
     collection: str,
 ) -> BaseRetriever:
+    # 앙상블에서 합치기 전에 넉넉히 가져오고, 마지막(파이프라인)에서 top_k로 자른다
+    fetch_k = config.top_k * config.candidate_multiplier
+
     def make_vector() -> BaseRetriever:
         return AsyncQdrantRetriever(
-            client=client, embeddings=embeddings, collection=collection, k=config.top_k
+            client=client, embeddings=embeddings, collection=collection, k=fetch_k
         )
 
     def make_bm25() -> BaseRetriever:
-        # 기본 토크나이저는 공백 기준이라 한국어 조사에 약하다 (개선은 추후 제안)
-        return BM25Retriever.from_documents(documents, k=config.top_k)
+        # whitespace는 한국어 조사 때문에 "제품의"와 "제품"이 다른 단어로 취급된다
+        return BM25Retriever.from_documents(
+            documents,
+            k=fetch_k,
+            preprocess_func=get_tokenizer(config.bm25_tokenizer),
+        )
 
     if config.method == "vector":
         return make_vector()

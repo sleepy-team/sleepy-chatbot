@@ -3,12 +3,29 @@
 from pathlib import Path
 
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
 def load_prompt(prompt_path: Path) -> ChatPromptTemplate:
     system_text = prompt_path.read_text(encoding="utf-8")
-    return ChatPromptTemplate.from_messages([("system", system_text), ("human", "{question}")])
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", system_text),
+            # 이전 대화가 없으면 비어 있어서 기존 프롬프트와 같은 입력이 된다
+            MessagesPlaceholder("history", optional=True),
+            ("human", "{question}"),
+        ]
+    )
+
+
+def format_history(history: list[tuple[str, str]] | None) -> list[BaseMessage]:
+    """(질문, 답변) 목록을 대화 메시지로 바꾼다."""
+    messages: list[BaseMessage] = []
+    for question, answer in history or []:
+        messages.append(HumanMessage(content=question))
+        messages.append(AIMessage(content=answer))
+    return messages
 
 
 def format_context(documents: list[Document]) -> str:
