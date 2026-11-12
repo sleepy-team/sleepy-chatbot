@@ -1,6 +1,6 @@
 from langchain_core.documents import Document
 
-from rag.chain import StructuredAnswer, append_citation, resolve_mode
+from rag_so.chain import StructuredAnswer, append_citation, resolve_mode
 
 
 def _docs(*labels: str) -> list[Document]:

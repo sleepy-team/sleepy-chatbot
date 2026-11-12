@@ -12,12 +12,12 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import BaseModel, Field, SecretStr
 
-from rag.config import RagConfig, get_openai_api_key, load_config
-from rag.loaders import load_documents
-from rag.prompts import format_context, format_history, load_prompt
-from rag.retrievers import build_retriever
-from rag.splitters import split_documents
-from rag.vectorstore import build_index, create_client
+from rag_so.config import RagConfig, get_openai_api_key, load_config
+from rag_so.loaders import load_documents
+from rag_so.prompts import format_context, format_history, load_prompt
+from rag_so.retrievers import build_retriever
+from rag_so.splitters import split_documents
+from rag_so.vectorstore import build_index, create_client
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,17 @@ class RAGResponse:
     # 답변에 실제로 인용한 문서. structured 일 때만 값이 있고(인용이 없으면 빈 목록),
     # sources(검색된 전체)는 평가를 위해 그대로 둔다
     cited_sources: list[Document] | None = None
+    # 아래 셋은 엔진이 직접 판단·집계해 주는 경우(팀 엔진 어댑터)에만 값이 있다
+    show_contact: bool | None = None  # 담당자 문의 버튼을 보여 줄지
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+
+
+def apply_corrections(query: str, corrections: dict[str, str] | None) -> str:
+    """명백한 오타를 바로잡는다. 검색어와 LLM에 보내는 질문 모두에 쓴다."""
+    for wrong, right in (corrections or {}).items():
+        query = query.replace(wrong, right)
+    return query
 
 
 def build_retrieval_query(
@@ -113,6 +124,7 @@ class RAGPipeline:
         turns = self.config.history_turns
         history = history[-turns:] if history and turns > 0 else None
 
+        query = apply_corrections(query, self.config.retrieval.typo_corrections)
         retrieval_query = build_retrieval_query(
             query, history, self.config.retrieval.query_synonyms
         )

@@ -8,8 +8,8 @@ import asyncio
 import logging
 import sys
 
-from rag.chain import create_pipeline
-from rag.config import load_config
+from rag_so.chain import create_pipeline
+from rag_so.config import load_config
 
 
 async def run(config_path: str | None, questions: list[str]) -> None:

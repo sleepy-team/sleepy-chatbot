@@ -10,8 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import chat, inquiry
 from app.core.config import get_settings
 from app.core.database import init_db
-from rag.chain import create_pipeline
-from rag.config import load_config
+from app.services.rag_engine import build_engine
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +18,16 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    rag_config = load_config()  # RAG_CONFIG 환경변수가 없으면 hybrid-v1
     await init_db(settings.db_path)
+    engine = await build_engine(settings)  # 인덱스·검색기는 시작할 때 한 번만 만든다
     app.state.db_path = settings.db_path
-    app.state.config_name = rag_config.name
-    app.state.history_turns = rag_config.history_turns
-    app.state.pipeline = await create_pipeline(rag_config)  # 인덱스는 시작할 때 한 번만 만든다
-    logger.info("RAG 설정 %s 로 시작", rag_config.name)
+    app.state.config_name = engine.name
+    app.state.history_turns = engine.history_turns
+    app.state.pipeline = engine.pipeline
+    logger.info("RAG 엔진 %s 로 시작 (%s)", engine.name, settings.rag_engine)
     yield
+    if callable(engine.close):
+        engine.close()
 
 
 def create_app() -> FastAPI:

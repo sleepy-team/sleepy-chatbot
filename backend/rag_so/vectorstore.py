@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from qdrant_client import AsyncQdrantClient, models
 
-from rag.config import QdrantConfig, resolve_repo_path
+from rag_so.config import QdrantConfig, resolve_repo_path
 
 logger = logging.getLogger(__name__)
 

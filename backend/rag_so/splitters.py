@@ -3,7 +3,7 @@
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from rag.config import ChunkingConfig
+from rag_so.config import ChunkingConfig
 
 
 def split_documents(documents: list[Document], config: ChunkingConfig) -> list[Document]:

@@ -12,9 +12,9 @@ from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict
 from qdrant_client import AsyncQdrantClient
 
-from rag.config import RetrievalConfig
-from rag.tokenizers import get_tokenizer
-from rag.vectorstore import CONTENT_KEY, METADATA_KEY
+from rag_so.config import RetrievalConfig
+from rag_so.tokenizers import get_tokenizer
+from rag_so.vectorstore import CONTENT_KEY, METADATA_KEY
 
 
 class AsyncQdrantRetriever(BaseRetriever):

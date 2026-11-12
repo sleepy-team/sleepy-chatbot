@@ -1,0 +1,31 @@
+# 팀 채택본(default.yaml)과 같은 구성이고 모델만 다르다. default.yaml은 수정하지 않았다.
+# 이유: 이 API 키의 프로젝트는 text-embedding-3-large 와 gpt-6-luna 에 접근 권한이 없다(403).
+# 채택본의 모델을 쓸 수 있는 키라면 TEAM_RAG_CONFIG=configs/rag/default.yaml 로 채택본 그대로 실행한다.
+# 모델이 달라서 채택본의 평가 수치를 그대로 기대할 수 없다. 이 설정의 결과는 따로 기록한다.
+name: default-mini
+owner: ""
+description: "default(채택본)와 같은 검색·판단 구성. 임베딩 text-embedding-3-small, LLM gpt-4o-mini로 바꾼 개발용 설정."
+
+data_path: data/faq.json
+extra_data_paths:
+  - data/product.json
+
+embedding:
+  model: text-embedding-3-small
+
+retrieval:
+  top_k: 5
+  keyword_slots: 1
+  history_turns: 1
+  history_merge: rrf
+  glossary: default
+
+decision:
+  min_score: 0.15
+  verify_numbers: true
+
+generation:
+  llm_model: gpt-4o-mini
+  temperature: 0
+  prompt: default
+  contact_email: sleeby00@gmail.com

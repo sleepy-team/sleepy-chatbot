@@ -1,7 +1,7 @@
 import pytest
 
-from rag.config import REPO_ROOT, RetrievalConfig, load_config
-from rag.tokenizers import get_tokenizer, whitespace_tokenize
+from rag_so.config import REPO_ROOT, RetrievalConfig, load_config
+from rag_so.tokenizers import get_tokenizer, whitespace_tokenize
 
 
 def test_기존_설정은_이전_동작을_유지한다() -> None:
@@ -45,6 +45,17 @@ def test_hybrid_v5_설정은_v4와_프롬프트만_다르다() -> None:
     assert v5.prompt_path.exists()
     assert v5.retrieval == v4.retrieval
     assert v5.llm == v4.llm
+
+
+def test_hybrid_v6_설정은_v5와_프롬프트와_보정_사전만_다르다() -> None:
+    v5 = load_config(REPO_ROOT / "configs" / "rag" / "hybrid-v5.yaml")
+    v6 = load_config(REPO_ROOT / "configs" / "rag" / "hybrid-v6.yaml")
+    assert v6.prompt_path.name == "system-v6.md"
+    assert v6.prompt_path.exists()
+    assert v6.retrieval.typo_corrections["베터리"] == "배터리"
+    assert v6.retrieval.top_k == v5.retrieval.top_k
+    assert v6.llm == v5.llm
+    assert v5.retrieval.typo_corrections == {}
 
 
 def test_이전_설정은_오타_사전을_쓰지_않는다() -> None:

@@ -1,7 +1,7 @@
 from httpx import AsyncClient
 
 from app.services.chat_service import resolve_mode
-from rag.chain import RAGResponse, build_retrieval_query
+from rag_so.chain import RAGResponse, apply_corrections, build_retrieval_query
 from tests.conftest import FakePipeline
 
 
@@ -74,6 +74,14 @@ def test_유형이_없으면_문구로_추정한다() -> None:
         "answer",
         False,
     )
+
+
+def test_명백한_오타는_바로잡고_설정이_없으면_그대로_둔다() -> None:
+    corrections = {"베터리": "배터리", "보증기긴": "보증기간"}
+
+    assert apply_corrections("슬리비 베터리 얼마나 가?", corrections) == "슬리비 배터리 얼마나 가?"
+    assert apply_corrections("보증기긴 머야?", corrections) == "보증기간 머야?"
+    assert apply_corrections("슬리비 베터리 얼마나 가?", None) == "슬리비 베터리 얼마나 가?"
 
 
 def test_검색_전에_구어와_오타를_표준어로_바꾼다() -> None:

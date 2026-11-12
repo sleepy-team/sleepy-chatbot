@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.core.database import init_db
 from app.main import create_app
-from rag.chain import RAGResponse
+from rag_so.chain import RAGResponse
 
 
 class FakePipeline:

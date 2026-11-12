@@ -1,0 +1,54 @@
+# hybrid-v5(R01 50문항 평가 결과 있음)에서 달라진 점. v5 파일은 수정하지 않았다.
+# 1) system-v6 프롬프트: 같은 뜻의 내용이 있으면 답하기(T09), 거친 말에 훈계하지 않기(T36),
+#    보장을 확인받으려는 질문에는 보장할 수 없다고 먼저 말하기(T46)
+# 2) query_synonyms 확장: "배터리 얼마나 가?"처럼 배터리 지속 시간을 묻는 표현을
+#    FAQ에 쓰인 표현(한 번 충전하면 몇 번 사용 가능)으로 보정해 Q29가 검색되게 한다(T19)
+name: hybrid-v6
+data_dir: data
+prompt_file: backend/rag/prompts/system-v6.md
+answer_format: structured # text | structured
+history_turns: 3
+
+embedding:
+  model: text-embedding-3-small
+  timeout: 30
+  max_retries: 4
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.0
+  timeout: 30
+  max_retries: 4
+
+chunking:
+  chunk_size: 400
+  chunk_overlap: 50
+
+qdrant:
+  # 하나만 지정: ":memory:" | 로컬 폴더 경로(path) | 서버 url
+  location: ":memory:"
+  path: null
+  url: null
+  collection: sleeby
+
+retrieval:
+  method: hybrid # vector | bm25 | hybrid
+  top_k: 10
+  candidate_multiplier: 2
+  bm25_tokenizer: kiwi
+  bm25_weight: 0.4
+  vector_weight: 0.6
+  # 명백한 오타는 검색어와 모델에 보내는 질문 모두에서 바로잡는다 (v6 신규).
+  # 같은 질문이라도 오타가 있으면 모델이 보수적으로 "확인 불가"로 답하는 것이 T19에서 확인됐다
+  typo_corrections:
+    베터리: 배터리
+    보증기긴: 보증기간
+  # 질문 속 말(왼쪽)을 검색할 때만 오른쪽으로 바꾼다. 위에서부터 순서대로 적용된다
+  query_synonyms:
+    어플: 앱
+    블투: 블루투스 스마트폰 연결
+    에이에스: AS 무상 수리 보증 고객센터 문의
+    "배터리 얼마나 가": 배터리 한 번 충전하면 몇 번 사용 가능 사용 횟수
+    "배터리 얼마나 오래": 배터리 한 번 충전하면 몇 번 사용 가능 사용 횟수
+    "배터리 오래 가": 배터리 한 번 충전하면 몇 번 사용 가능 사용 횟수
+    "배터리 지속": 배터리 한 번 충전하면 몇 번 사용 가능 사용 횟수

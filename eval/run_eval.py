@@ -21,8 +21,8 @@ sys.path.insert(0, str(EVAL_DIR.parent / "backend"))  # rag 패키지를 import�
 
 from langchain_core.callbacks import UsageMetadataCallbackHandler  # noqa: E402
 
-from rag.chain import create_pipeline  # noqa: E402
-from rag.config import load_config  # noqa: E402
+from rag_so.chain import create_pipeline  # noqa: E402
+from rag_so.config import load_config  # noqa: E402
 
 QUESTIONS_PATH = EVAL_DIR / "dev_questions.json"
 RESULTS_DIR = EVAL_DIR / "results"

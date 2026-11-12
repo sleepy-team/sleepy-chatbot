@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.repositories.chat_log_repository import ChatLogRepository
 from app.schemas.chat import ChatMessage, ChatMode, ChatResponse, SourceItem
-from rag.chain import RAGResponse
+from rag_so.chain import RAGResponse
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,9 @@ def resolve_mode(response: RAGResponse) -> tuple[ChatMode, bool]:
     """모델이 유형을 직접 냈으면 그 값을 쓰고, 아니면 답변 문구로 추정한다."""
     if response.mode is None:
         return classify_answer(response.answer)
+    if response.show_contact is not None:
+        # 엔진이 담당자 문의 표시까지 직접 판단한 경우(팀 엔진)에는 그대로 따른다
+        return response.mode, response.show_contact
     mode: ChatMode = response.mode
     # 답했더라도 고객센터 문의를 함께 안내했다면 문의 버튼을 보여 준다
     if mode == "answer" and INQUIRY_RE.search(response.answer):
@@ -99,6 +102,17 @@ class ChatService:
         shown = response.cited_sources if response.cited_sources is not None else response.sources
         sources = [to_source_item(d) for d in shown]
         totals = list(usage.usage_metadata.values())
+        # 엔진이 토큰 수를 직접 알려 주면(팀 엔진) 그 값을, 아니면 호출 콜백의 합계를 쓴다
+        input_tokens = (
+            response.prompt_tokens
+            if response.prompt_tokens is not None
+            else sum(u.get("input_tokens", 0) for u in totals)
+        )
+        output_tokens = (
+            response.completion_tokens
+            if response.completion_tokens is not None
+            else sum(u.get("output_tokens", 0) for u in totals)
+        )
         await self._repository.add(
             session_id=session_id,
             question=message,
@@ -107,8 +121,8 @@ class ChatService:
             needs_inquiry=needs_inquiry,
             sources=sources,
             latency_ms=latency_ms,
-            input_tokens=sum(u.get("input_tokens", 0) for u in totals),
-            output_tokens=sum(u.get("output_tokens", 0) for u in totals),
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
             config_name=self._config_name,
         )
         return ChatResponse(

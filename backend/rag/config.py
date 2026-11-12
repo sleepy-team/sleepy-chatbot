@@ -1,99 +1,101 @@
-"""RAG 설정 파일(YAML)과 .env(API 키) 로드."""
+"""RAG 설정(YAML)과 환경변수 로딩."""
 
-import os
 from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "rag" / "hybrid-v1.yaml"
-CONFIG_ENV_VAR = "RAG_CONFIG"
 
 
-class EnvSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=REPO_ROOT / ".env", extra="ignore")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=REPO_ROOT / ".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
-    openai_api_key: SecretStr | None = None
+    openai_api_key: SecretStr
 
 
 class EmbeddingConfig(BaseModel):
-    model: str
-    timeout: float | None = None
-    max_retries: int | None = None
-
-
-class LLMConfig(BaseModel):
-    model: str
-    temperature: float = 0.0
-    # 네트워크가 불안정할 때를 위한 값. None이면 라이브러리 기본값을 쓴다(기존 동작)
-    timeout: float | None = None
-    max_retries: int | None = None
-
-
-class ChunkingConfig(BaseModel):
-    chunk_size: int = 400
-    chunk_overlap: int = 50
-
-
-class QdrantConfig(BaseModel):
-    location: str | None = ":memory:"
-    path: str | None = None
-    url: str | None = None
-    collection: str = "sleeby"
+    model: str = "text-embedding-3-large"
 
 
 class RetrievalConfig(BaseModel):
-    method: Literal["vector", "bm25", "hybrid"] = "hybrid"
-    top_k: int = 3
-    bm25_weight: float = 0.4
-    vector_weight: float = 0.6
-    # 검색 전에 질문 속 구어·오타를 표준어로 바꾼다 (예: 어플 -> 앱). LLM에는 원문 질문을 보낸다
-    query_synonyms: dict[str, str] = {}
-    # 기존 설정(v1)의 동작을 바꾸지 않도록 기본값은 이전 동작과 같다
-    bm25_tokenizer: Literal["whitespace", "kiwi"] = "whitespace"
-    # 앙상블 전에 각 검색기가 top_k의 몇 배를 가져올지 (마지막에 top_k로 자른다)
-    candidate_multiplier: int = 1
+    top_k: int = 4
+    # top_k 자리 중 키워드 검색(2글자 BM25) 1등에게 내줄 자리 수. 0이면 임베딩 검색만 쓴다.
+    # 질문에 다른 말이 많으면 임베딩 검색이 핵심 단어("음악")를 놓칠 때가 있어서 둔다.
+    keyword_slots: int = Field(default=0, ge=0)
+    # 고객의 이전 질문을 몇 개까지 검색과 판단에 쓸지. 0이면 이전 질문을 무시한다.
+    # "케이스는요?" 같은 후속 질문을 이해하기 위해 쓴다.
+    history_turns: int = Field(default=0, ge=0)
+    # 후속 질문일 때 '지금 질문'과 '이전 질문 + 지금 질문' 검색 결과를 합치는 방식.
+    # alternate: 번갈아 합친다. rrf: 순위 합산(Reciprocal Rank Fusion)으로 양쪽에 모두 나온 FAQ를 앞에 둔다
+    history_merge: Literal["alternate", "rrf"] = "alternate"
+    # 검색 전 용어 정리 사전 이름 (backend/rag/glossaries/{glossary}.yaml). 비우면 쓰지 않는다
+    glossary: str | None = None
+
+    @model_validator(mode="after")
+    def _check_slots(self) -> "RetrievalConfig":
+        if self.keyword_slots >= self.top_k:
+            raise ValueError(
+                "keyword_slots는 top_k보다 작아야 합니다 (임베딩 자리가 최소 1개 필요)"
+            )
+        return self
+
+
+class DecisionConfig(BaseModel):
+    # 이 점수(코사인 유사도) 미만인 검색 결과는 LLM에 넘기지 않는다
+    min_score: float = 0.15
+    # 답변 속 숫자가 근거 FAQ와 질문에 없으면 LLM 답변 대신 근거 FAQ 원문을 보여 준다.
+    # LLM이 시간·횟수·기간을 지어내는 것을 막기 위한 장치
+    verify_numbers: bool = True
+
+
+class GenerationConfig(BaseModel):
+    llm_model: str
+    # 비우면 모델 기본값. 추론 모델은 reasoning_effort가 "none"일 때만 temperature를 받는다
+    temperature: float | None = None
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    # backend/rag/prompts/{prompt}.yaml
+    prompt: str = "default"
+    # 프롬프트의 {contact_email} 자리에 들어갈 고객상담 이메일
+    contact_email: str | None = None
 
 
 class RagConfig(BaseModel):
+    model_config = {"extra": "forbid"}  # 설정 파일 오타를 조용히 무시하지 않도록
+
     name: str
-    data_dir: str = "data"
-    prompt_file: str = "backend/rag/prompts/system.md"
-    embedding: EmbeddingConfig
-    llm: LLMConfig
-    chunking: ChunkingConfig = ChunkingConfig()
-    qdrant: QdrantConfig = QdrantConfig()
-    retrieval: RetrievalConfig = RetrievalConfig()
-    # structured: 모델이 답변 유형(mode)과 답변을 함께 낸다. text: 답변 문장만 낸다(기존 동작)
-    answer_format: Literal["text", "structured"] = "text"
-    # 같은 세션의 최근 몇 턴을 프롬프트에 넣을지 (0이면 사용하지 않는다: 기존 동작)
-    history_turns: int = 0
+    owner: str = ""
+    description: str = ""
+    data_path: str = "data/faq.json"
+    # FAQ와 같은 형식의 추가 데이터(제품 정보 등). FAQ와 한 컬렉션에 섞어 검색한다
+    extra_data_paths: list[str] = Field(default_factory=list)
+    embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
+    decision: DecisionConfig = Field(default_factory=DecisionConfig)
+    generation: GenerationConfig
 
     @property
-    def data_path(self) -> Path:
-        return resolve_repo_path(self.data_dir)
+    def data_paths(self) -> list[str]:
+        return [self.data_path, *self.extra_data_paths]
 
     @property
-    def prompt_path(self) -> Path:
-        return resolve_repo_path(self.prompt_file)
+    def qdrant_path(self) -> Path:
+        return REPO_ROOT / ".qdrant" / self.name
+
+    @property
+    def collection_name(self) -> str:
+        return f"sleeby_{self.name}"
 
 
-def resolve_repo_path(value: str) -> Path:
-    path = Path(value)
-    return path if path.is_absolute() else REPO_ROOT / path
+def resolve_path(path: str | Path) -> Path:
+    p = Path(path)
+    return p if p.is_absolute() else REPO_ROOT / p
 
 
-def load_config(path: str | Path | None = None) -> RagConfig:
-    config_path = Path(path or os.environ.get(CONFIG_ENV_VAR) or DEFAULT_CONFIG_PATH)
-    with config_path.open(encoding="utf-8") as f:
+def load_config(path: str | Path) -> RagConfig:
+    with resolve_path(path).open(encoding="utf-8") as f:
         return RagConfig.model_validate(yaml.safe_load(f))
-
-
-def get_openai_api_key() -> str:
-    key = EnvSettings().openai_api_key
-    if key is None or not key.get_secret_value():
-        raise RuntimeError("OPENAI_API_KEY가 없어요. 저장소 루트 .env에 설정해 주세요.")
-    return key.get_secret_value()

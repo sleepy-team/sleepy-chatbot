@@ -35,6 +35,10 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 
+# rag/ 는 팀 채택 엔진이다. 팀 ruff 설정은 E501(줄 길이)을 검사하지 않으므로 수정하지 않고 면제한다
+[tool.ruff.lint.per-file-ignores]
+"rag/**" = ["E501"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
