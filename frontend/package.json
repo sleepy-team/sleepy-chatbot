@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "oxlint",
+    "lint": "oxlint && npm run lint:design",
+    "lint:design": "node scripts/check-design-tokens.mjs",
     "preview": "vite preview",
     "format": "prettier --write src",
     "format:check": "prettier --check src"
