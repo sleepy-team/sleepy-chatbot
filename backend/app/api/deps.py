@@ -15,7 +15,12 @@ def get_chat_log_repository(request: Request) -> ChatLogRepository:
 def get_chat_service(
     request: Request, repository: ChatLogRepository = Depends(get_chat_log_repository)
 ) -> ChatService:
-    return ChatService(request.app.state.pipeline, repository, request.app.state.config_name)
+    return ChatService(
+        request.app.state.pipeline,
+        repository,
+        request.app.state.config_name,
+        history_turns=request.app.state.history_turns,
+    )
 
 
 def get_inquiry_service(

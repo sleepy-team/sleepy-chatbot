@@ -2,7 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ChatMode = Literal["answer", "partial", "unknown", "offtopic"]
+# chitchat: 인사·감사·챗봇 소개, clarify: 뜻이 불분명해 되묻는 답변
+ChatMode = Literal["answer", "partial", "unknown", "offtopic", "chitchat", "clarify"]
 
 
 class ChatRequest(BaseModel):

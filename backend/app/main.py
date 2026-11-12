@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await init_db(settings.db_path)
     app.state.db_path = settings.db_path
     app.state.config_name = rag_config.name
+    app.state.history_turns = rag_config.history_turns
     app.state.pipeline = await create_pipeline(rag_config)  # 인덱스는 시작할 때 한 번만 만든다
     logger.info("RAG 설정 %s 로 시작", rag_config.name)
     yield
