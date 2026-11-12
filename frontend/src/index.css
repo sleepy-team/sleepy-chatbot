@@ -1,0 +1,608 @@
+/* 토큰과 챗봇 스타일은 design/sleepy-landing.html 의 안내 도우미 영역을 따른다 */
+:root {
+  --walnut: #15110d;
+  --wood: #261e18;
+  --wood-2: #31271f;
+  --linen: #ede4d3;
+  --linen-2: #c4b7a2;
+  --linen-3: #9c8f7c;
+  --lamp: #e8b46a;
+  --lamp-hi: #f4cc8e;
+  --lamp-ink: #20150a;
+  --brass: rgba(184, 147, 90, 0.34);
+  --brass-2: rgba(184, 147, 90, 0.6);
+  --hair: rgba(237, 228, 211, 0.09);
+  --danger: #e58a7a;
+  --display: 'Hahmlet', 'Nanum Myeongjo', serif;
+  --sans:
+    'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic',
+    sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--walnut);
+  color: var(--linen);
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 2px;
+}
+
+.stage {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 24px;
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 19px;
+  letter-spacing: 0.34em;
+}
+
+.stage-note {
+  margin: 0;
+  color: var(--linen-3);
+  font-size: 14px;
+}
+
+.stage-note code {
+  font-size: 13px;
+  color: var(--linen-2);
+}
+
+.launcher {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 22px 0 16px;
+  border: 1px solid var(--brass-2);
+  border-radius: 999px;
+  background: var(--wood);
+  font-weight: 600;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.85);
+  transition:
+    transform 0.4s var(--ease),
+    border-color 0.3s;
+}
+
+.launcher:hover {
+  border-color: var(--lamp);
+  transform: translateY(-2px);
+}
+
+.launcher .dot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--lamp);
+  color: var(--lamp-ink);
+  font-size: 12px;
+}
+
+.chat {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  /* 부모(.stage)의 가운데 정렬을 물려받지 않게 한다 */
+  text-align: left;
+  width: 404px;
+  max-width: calc(100vw - 40px);
+  height: min(700px, calc(100dvh - 40px));
+  border: 1px solid var(--brass);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #221b15, #17120e 40%);
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  animation: rise 0.5s var(--ease) both;
+}
+
+.chat.is-solo {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.chat.is-solo .chat-body,
+.chat.is-solo .chat-foot {
+  width: min(100%, 760px);
+  margin-inline: auto;
+}
+
+@media (max-width: 600px) {
+  .chat {
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 14px 16px 24px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.chat-name b {
+  display: block;
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: 16px;
+  letter-spacing: 0.3em;
+  line-height: 1.3;
+}
+
+.chat-name span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--linen-3);
+  font-size: 13px;
+}
+
+.chat-name span::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lamp);
+}
+
+.tools {
+  display: flex;
+}
+
+.tool {
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--linen-2);
+  font-size: 13.5px;
+}
+
+.tool:hover {
+  background: var(--wood-2);
+  color: var(--linen);
+}
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wood-2) transparent;
+}
+
+.moon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 180, 106, 0.24), rgba(232, 180, 106, 0.04) 70%);
+  color: var(--lamp);
+  font-size: 22px;
+}
+
+.welcome h2 {
+  margin: 20px 0 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 25px;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.welcome > p {
+  margin: 8px 0 0;
+  color: var(--linen-2);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.topics {
+  display: grid;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.topic {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: rgba(237, 228, 211, 0.025);
+  text-align: left;
+  transition:
+    border-color 0.25s,
+    background-color 0.25s;
+}
+
+.topic small {
+  display: block;
+  color: var(--linen-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.topic strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.topic:hover,
+.topic.is-on {
+  border-color: var(--brass-2);
+  background: rgba(232, 180, 106, 0.07);
+}
+
+.questions {
+  margin-top: 14px;
+}
+
+.msgs {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.msg {
+  animation: rise 0.5s var(--ease) both;
+}
+
+.msg.user {
+  align-self: flex-end;
+  max-width: 86%;
+  padding: 11px 17px;
+  border-radius: 12px 12px 4px 12px;
+  background: var(--wood-2);
+  font-size: 15px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.msg.bot {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+}
+
+.av {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(232, 180, 106, 0.14);
+  color: var(--lamp);
+  font-size: 13px;
+}
+
+.bot-text {
+  min-width: 0;
+  padding-top: 2px;
+  font-size: 15px;
+  line-height: 1.75;
+  /* 한글을 글자 중간이 아니라 띄어쓰기에서 줄바꿈한다 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.bot-text p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.mode-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--lamp);
+  font-size: 12.5px;
+}
+
+.mode-unknown .bot-text,
+.mode-partial .bot-text {
+  padding: 10px 14px;
+  border: 1px dashed var(--brass-2);
+  border-radius: 12px;
+  background: rgba(232, 180, 106, 0.05);
+}
+
+.mode-error .mode-label {
+  color: var(--danger);
+}
+
+.src {
+  display: block;
+  margin-top: 10px;
+  color: var(--linen-3);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pill {
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--linen);
+  font-size: 13.5px;
+  text-align: left;
+  transition:
+    border-color 0.25s,
+    background-color 0.25s;
+}
+
+.pill:hover,
+.pill.is-on {
+  border-color: var(--lamp);
+}
+
+.pill.solid {
+  border-color: transparent;
+  background: var(--lamp);
+  color: var(--lamp-ink);
+  font-weight: 600;
+}
+
+.pill.solid:hover {
+  background: var(--lamp-hi);
+}
+
+.pill:disabled {
+  opacity: 0.5;
+}
+
+.score {
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid currentColor;
+  color: var(--linen-3);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+
+.excerpt {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--walnut);
+  color: var(--linen-2);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.excerpt p {
+  margin: 4px 0 0;
+}
+
+.confirm {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--brass);
+  border-radius: 12px;
+  background: var(--walnut);
+  font-size: 14.5px;
+}
+
+.typing {
+  display: inline-flex;
+  gap: 5px;
+  padding-top: 11px;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--linen-3);
+  animation: blink 1.4s infinite ease-in-out;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.inquiry {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--walnut);
+}
+
+.inquiry label {
+  color: var(--linen-3);
+  font-size: 12.5px;
+}
+
+.inquiry input:not([type='checkbox']),
+.inquiry textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--brass);
+  border-radius: 8px;
+  background: #0f0c0a;
+  font-size: 14.5px;
+  resize: vertical;
+}
+
+.inquiry input:focus,
+.inquiry textarea:focus {
+  outline: none;
+  border-color: var(--lamp);
+}
+
+.inquiry .check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inquiry .actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.inquiry .error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.chat-foot {
+  padding: 10px 16px 14px;
+}
+
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 5px 5px 20px;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  background: #0f0c0a;
+  transition: border-color 0.25s;
+}
+
+.composer:focus-within {
+  border-color: var(--lamp);
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 15.5px;
+}
+
+.composer input:focus {
+  outline: none;
+}
+
+.composer input::placeholder {
+  color: var(--linen-3);
+}
+
+.send {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--wood-2);
+  color: var(--linen-3);
+  font-size: 16px;
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+
+.composer.has-text .send {
+  background: var(--lamp);
+  color: var(--lamp-ink);
+}
+
+.chat-note {
+  margin: 9px 0 0;
+  color: var(--linen-3);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
