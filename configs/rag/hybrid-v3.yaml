@@ -1,0 +1,39 @@
+# hybrid-v2(R01 50문항 평가 결과 있음)에서 달라진 점은 아래 세 가지다. v2 파일은 수정하지 않았다.
+# 1) system-v3 프롬프트 + 구조화 출력(답변 유형 mode를 모델이 직접 낸다)
+# 2) 같은 세션의 최근 3턴을 프롬프트에 전달(history_turns)
+# 3) 네트워크가 불안정할 때를 위한 타임아웃과 자동 재시도 (모델은 v2와 같다)
+name: hybrid-v3
+data_dir: data
+prompt_file: backend/rag/prompts/system-v3.md
+answer_format: structured # text | structured
+history_turns: 3
+
+embedding:
+  model: text-embedding-3-small
+  timeout: 30
+  max_retries: 4
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.0
+  timeout: 30
+  max_retries: 4
+
+chunking:
+  chunk_size: 400
+  chunk_overlap: 50
+
+qdrant:
+  # 하나만 지정: ":memory:" | 로컬 폴더 경로(path) | 서버 url
+  location: ":memory:"
+  path: null
+  url: null
+  collection: sleeby
+
+retrieval:
+  method: hybrid # vector | bm25 | hybrid
+  top_k: 5
+  candidate_multiplier: 2
+  bm25_tokenizer: kiwi
+  bm25_weight: 0.4
+  vector_weight: 0.6

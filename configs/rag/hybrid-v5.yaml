@@ -1,0 +1,52 @@
+﻿# hybrid-v4(R01 50문항 평가 결과 있음)에서 달라진 점은 system-v5 프롬프트 하나다. v4 파일은 수정하지 않았다.
+# v5: "충전 어케함?"처럼 주제가 분명한 구어 질문은 되묻지 않고 바로 답한다 (v4에서 되묻기로 후퇴한 T18).
+#
+# 아래는 v4부터 이어지는 설명이다.
+# hybrid-v3(R01 50문항 평가 결과 있음)에서 달라진 점. v3 파일은 수정하지 않았다.
+# 1) system-v4 프롬프트: 예시에서 실제 제품 사실 제거(내용 누출 방지), 근거 기반 규칙 강화,
+#    해석 가능한 오타는 되묻지 않기, 부분 근거가 있으면 있는 만큼 답하기
+# 2) query_synonyms: 검색 전에 구어·오타를 표준어로 바꾼다 (LLM 호출 없음)
+# 3) top_k 5 -> 10
+name: hybrid-v5
+data_dir: data
+prompt_file: backend/rag/prompts/system-v5.md
+answer_format: structured # text | structured
+history_turns: 3
+
+embedding:
+  model: text-embedding-3-small
+  timeout: 30
+  max_retries: 4
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.0
+  timeout: 30
+  max_retries: 4
+
+chunking:
+  chunk_size: 400
+  chunk_overlap: 50
+
+qdrant:
+  # 하나만 지정: ":memory:" | 로컬 폴더 경로(path) | 서버 url
+  location: ":memory:"
+  path: null
+  url: null
+  collection: sleeby
+
+retrieval:
+  method: hybrid # vector | bm25 | hybrid
+  top_k: 10 # v3는 5. 5개로는 Q3·Q12 같은 정답 FAQ가 밀려나는 질문이 있었다
+  candidate_multiplier: 2
+  bm25_tokenizer: kiwi
+  bm25_weight: 0.4
+  vector_weight: 0.6
+  # 질문 속 말(왼쪽)을 검색할 때만 오른쪽으로 바꾼다. 데이터(FAQ)에 쓰인 표현에 맞춘다
+  query_synonyms:
+    어플: 앱
+    베터리: 배터리
+    블투: 블루투스 스마트폰 연결
+    보증기긴: 보증기간
+    에이에스: AS 무상 수리 보증 고객센터 문의
+

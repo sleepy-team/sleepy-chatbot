@@ -1,0 +1,31 @@
+# hybrid-v1에서 달라진 점: system-v2 프롬프트, top_k 5(후보 2배), product.json 포함,
+# BM25 토크나이저 설정. v1 파일은 수정하지 않았다.
+name: hybrid-v2
+data_dir: data
+prompt_file: backend/rag/prompts/system-v2.md
+
+embedding:
+  model: text-embedding-3-small
+
+llm:
+  model: gpt-4o-mini
+  temperature: 0.0
+
+chunking:
+  chunk_size: 400
+  chunk_overlap: 50
+
+qdrant:
+  # 하나만 지정: ":memory:" | 로컬 폴더 경로(path) | 서버 url
+  location: ":memory:"
+  path: null
+  url: null
+  collection: sleeby
+
+retrieval:
+  method: hybrid # vector | bm25 | hybrid
+  top_k: 5
+  candidate_multiplier: 2 # 앙상블 전에 각 검색기가 top_k x 2 개를 가져온다
+  bm25_tokenizer: kiwi # whitespace | kiwi (형태소 분석으로 조사를 뗀 명사·어간 토큰)
+  bm25_weight: 0.4
+  vector_weight: 0.6
