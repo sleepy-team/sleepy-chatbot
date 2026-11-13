@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
+import { useChatResize } from '../hooks/useChatResize';
+import Icon from './Icon';
 import MessageBubble from './MessageBubble';
+
+const GREETING = '안녕하세요! 무엇을 도와드릴까요?';
+const RESIZE_HINT = '끌어서 크기 조절 (두 번 누르면 처음 크기)';
 
 const TOPICS = [
   {
@@ -36,11 +41,28 @@ export default function ChatPanel({ isSolo = false, onClose }) {
   const [input, setInput] = useState('');
   const [topic, setTopic] = useState(null);
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const bottomRef = useRef(null);
+  const chatRef = useRef(null);
+  // 전체 화면(#/chat)에서는 창이 화면을 채우므로 크기 조절을 쓰지 않는다
+  const resize = useChatResize(chatRef, !isSolo);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  // 전체 창으로 확대한 상태에서는 Esc로 원래 크기로 돌아간다
+  useEffect(() => {
+    if (!isExpanded && !isConfirmingReset) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      // 확인 창이 떠 있으면 그것만 닫는다
+      if (isConfirmingReset) setIsConfirmingReset(false);
+      else setIsExpanded(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isExpanded, isConfirmingReset]);
 
   const submit = (event) => {
     event.preventDefault();
@@ -55,9 +77,45 @@ export default function ChatPanel({ isSolo = false, onClose }) {
   };
 
   const isTalking = messages.length > 0;
+  const expandLabel = isExpanded ? '원래 크기로 줄이기' : '전체 창으로 확대';
+  const closeLabel = isSolo ? '나가기' : '닫기';
+  const canResize = !isSolo && !isExpanded;
 
   return (
-    <section className={`chat ${isSolo ? 'is-solo' : ''}`} aria-label="슬리비 안내 도우미">
+    <section
+      ref={chatRef}
+      className={`chat ${isSolo ? 'is-solo' : ''} ${isExpanded ? 'is-expanded' : ''} ${
+        resize.active ? 'is-resizing' : ''
+      }`}
+      aria-label="슬리비 안내 도우미"
+    >
+      {canResize && (
+        <>
+          <button
+            type="button"
+            className="chat-resize is-corner"
+            data-active={resize.active === 'corner'}
+            title={RESIZE_HINT}
+            aria-label="채팅창 크기 조절. 방향키로 크기를 바꾸고 Enter로 처음 크기로 되돌려요"
+            onKeyDown={resize.onKeyDown}
+            {...resize.handleProps('corner')}
+          />
+          <span
+            className="chat-resize is-left"
+            data-active={resize.active === 'left'}
+            title={RESIZE_HINT}
+            aria-hidden="true"
+            {...resize.handleProps('left')}
+          />
+          <span
+            className="chat-resize is-top"
+            data-active={resize.active === 'top'}
+            title={RESIZE_HINT}
+            aria-hidden="true"
+            {...resize.handleProps('top')}
+          />
+        </>
+      )}
       <header className="chat-head">
         <div className="chat-name">
           <b>SLEEBY</b>
@@ -65,70 +123,85 @@ export default function ChatPanel({ isSolo = false, onClose }) {
         </div>
         <div className="tools">
           {isTalking && (
-            <button type="button" className="tool" onClick={() => setIsConfirmingReset(true)}>
-              초기화
+            <button
+              type="button"
+              className="tool is-icon"
+              aria-label="새로고침 (대화 초기화)"
+              title="새로고침 (대화 초기화)"
+              onClick={() => setIsConfirmingReset(true)}
+            >
+              <Icon name="refresh" />
             </button>
           )}
-          <button type="button" className="tool" onClick={onClose}>
-            {isSolo ? '나가기' : '닫기'}
+          {!isSolo && (
+            <button
+              type="button"
+              className="tool is-icon is-expand"
+              aria-label={expandLabel}
+              aria-pressed={isExpanded}
+              title={expandLabel}
+              onClick={() => setIsExpanded((value) => !value)}
+            >
+              <Icon name={isExpanded ? 'collapse' : 'expand'} />
+            </button>
+          )}
+          <button
+            type="button"
+            className="tool is-icon"
+            aria-label={closeLabel}
+            title={closeLabel}
+            onClick={onClose}
+          >
+            <Icon name="minus" />
           </button>
         </div>
       </header>
 
       <div className="chat-body">
-        {isConfirmingReset && (
-          <div className="confirm" role="alertdialog">
-            <span>대화를 모두 지울까요?</span>
-            <div className="chips">
-              <button type="button" className="pill solid" onClick={confirmReset}>
-                지우기
-              </button>
-              <button type="button" className="pill" onClick={() => setIsConfirmingReset(false)}>
-                취소
-              </button>
+        <div className="msgs">
+          <div className="msg bot">
+            <span className="av" aria-hidden="true">
+              ☾
+            </span>
+            <div className="bot-text">
+              <p>{GREETING}</p>
             </div>
           </div>
-        )}
-        {!isTalking && (
-          <div className="welcome">
-            <div className="moon" aria-hidden="true">
-              ☾
-            </div>
-            <h2>편안한 밤을 위한 안내를 도와드릴게요</h2>
-            <p>제품 자료와 FAQ를 근거로 답해요. 수면 효과나 의학적 판단은 안내하지 않아요.</p>
-            <div className="topics">
-              {TOPICS.map((item) => (
-                <button
-                  key={item.name}
-                  type="button"
-                  className={`topic ${topic?.name === item.name ? 'is-on' : ''}`}
-                  onClick={() => setTopic(item)}
-                >
-                  <span>
-                    <small>{item.hint}</small>
-                    <strong>{item.name}</strong>
-                  </span>
-                  <span aria-hidden="true">→</span>
-                </button>
-              ))}
-            </div>
-            {topic && (
-              <div className="chips questions">
-                {topic.questions.map((question) => (
+          {!isTalking && (
+            <div className="welcome">
+              <p>제품 자료와 FAQ를 근거로 답해요. 수면 효과나 의학적 판단은 안내하지 않아요.</p>
+              <div className="topics">
+                {TOPICS.map((item) => (
                   <button
-                    key={question}
+                    key={item.name}
                     type="button"
-                    className="pill"
-                    onClick={() => ask(question)}
+                    className={`topic ${topic?.name === item.name ? 'is-on' : ''}`}
+                    onClick={() => setTopic(item)}
                   >
-                    {question}
+                    <span>
+                      <small>{item.hint}</small>
+                      <strong>{item.name}</strong>
+                    </span>
+                    <span aria-hidden="true">→</span>
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-        <div className="msgs">
+              {topic && (
+                <div className="chips questions">
+                  {topic.questions.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      className="pill"
+                      onClick={() => ask(question)}
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {messages.map((message, index) => (
             <MessageBubble key={index} message={message} sessionId={sessionId} />
           ))}
@@ -169,6 +242,32 @@ export default function ChatPanel({ isSolo = false, onClose }) {
         </form>
         <p className="chat-note">AI 답변은 자료에 없는 내용을 확인하지 못할 수 있어요.</p>
       </footer>
+
+      {isConfirmingReset && (
+        <div className="modal-backdrop">
+          <div
+            className="modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-describedby="reset-message"
+          >
+            <p id="reset-message">이전 질문과 답변 기록은 돌아가지 못합니다.</p>
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="pill"
+                autoFocus
+                onClick={() => setIsConfirmingReset(false)}
+              >
+                대화 이어가기
+              </button>
+              <button type="button" className="pill solid" onClick={confirmReset}>
+                새 대화
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

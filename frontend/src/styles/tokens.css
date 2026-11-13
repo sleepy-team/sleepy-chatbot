@@ -84,18 +84,20 @@
   /*
    * 글자 크기는 챗봇 창(.chat, container-type: inline-size) 너비에 비례해 연속으로 커지고 줄어든다.
    * 형식: clamp(최소, 최소 + (창 너비 - 360px) x 기울기, 최대)
-   *  - 창 너비 360px 이하는 최소값, 520px 이상은 최대값이고 그 사이는 직선으로 변한다.
-   *  - 360~520px은 챗봇 창이 실제로 움직이는 범위(화면에 띄운 창 380~520px, 모바일 전체 화면 360px~)다.
-   *  - 기울기 = (최대 - 최소) / 160px. 값이 클수록 창이 넓어질 때 더 많이 커진다.
-   * 챗봇 창 밖(데모 무대)에서는 cqi가 화면 너비 기준이라 같은 범위 안에서 움직인다.
+   *  - 창 너비 360px 이하는 최소값, 860px 이상은 최대값이고 그 사이는 직선으로 변한다.
+   *  - 360~860px은 사용자가 끌어서 조절할 수 있는 창 너비 범위(--chat-min-width ~ --chat-max-width)와 같다.
+   *  - 기울기 = (최대 - 최소) / 500px. 값이 클수록 창이 넓어질 때 더 많이 커진다.
+   *  - 기본 창(440px)의 본문이 약 15px가 되도록 맞췄다(창 대비 글자가 너무 커 보이지 않게).
+   * 전체 화면 확장 때는 본문 열이 최대 760px이라, 상한(본문 18px)이 그 열에 맞는 크기다.
    */
-  --text-xs: clamp(14px, calc(14px + (100cqi - 360px) * 0.0125), 16px); /* 캡션, 라벨, 출처 */
-  --text-sm: clamp(15px, calc(15px + (100cqi - 360px) * 0.015625), 17.5px); /* 칩, 보조 설명 */
-  --text-base: clamp(17px, calc(17px + (100cqi - 360px) * 0.01875), 20px); /* 대화·폼 본문 */
-  --text-md: clamp(18px, calc(18px + (100cqi - 360px) * 0.021875), 21.5px); /* 입력창, 강조 */
-  --text-lg: clamp(20px, calc(20px + (100cqi - 360px) * 0.025), 24px); /* 워드마크 */
-  --text-xl: clamp(28px, calc(28px + (100cqi - 360px) * 0.05), 36px); /* 환영 제목 */
-  --icon-lg: clamp(24px, calc(24px + (100cqi - 360px) * 0.0375), 30px); /* 큰 글리프 아이콘 */
+  --text-xs: clamp(12px, calc(12px + (100cqi - 360px) * 0.005), 14.5px); /* 캡션, 라벨, 출처 */
+  --text-sm: clamp(13px, calc(13px + (100cqi - 360px) * 0.006), 16px); /* 칩, 보조 설명 */
+  --text-base: clamp(14.5px, calc(14.5px + (100cqi - 360px) * 0.007), 18px); /* 대화·폼 본문 */
+  --text-md: clamp(16px, calc(16px + (100cqi - 360px) * 0.006), 19px); /* 입력창(16px 미만 금지) */
+  --text-lg: clamp(19px, calc(19px + (100cqi - 360px) * 0.01), 24px); /* 워드마크 */
+  --text-xl: clamp(24px, calc(24px + (100cqi - 360px) * 0.016), 32px); /* 큰 제목 */
+  --icon-lg: clamp(22px, calc(22px + (100cqi - 360px) * 0.012), 28px); /* 큰 글리프 아이콘 */
+  --icon-sm: clamp(15px, calc(15px + (100cqi - 360px) * 0.008), 19px); /* 헤더 도구 아이콘 */
 
   --leading-tight: 1.3;
   --leading-heading: 1.4;
@@ -131,26 +133,43 @@
   --border-width: 1px;
   --outline-width: 2px;
   --outline-offset: 2px;
+  --stroke-thin: 1.25; /* 아이콘 선 굵기(가느다랗게) */
   --opacity-dim: 0.25;
   --opacity-disabled: 0.5;
+  --opacity-hint: 0.85;
 
   /* ===== 8. 컴포넌트 크기 ===== */
-  /* 컨트롤은 글자 크기와 함께 커지므로 챗봇 창 너비에 비례한다. 최소값이 터치 목표 44px를 지킨다 */
-  --control-sm: clamp(40px, calc(40px + (100cqi - 360px) * 0.0375), 46px); /* 칩, 작은 버튼 */
-  --control-md: clamp(44px, calc(44px + (100cqi - 360px) * 0.05), 52px); /* 도구 버튼 */
-  --control-lg: clamp(48px, calc(48px + (100cqi - 360px) * 0.05), 56px); /* 입력창, 전송 버튼 */
+  /* 컨트롤은 글자 크기와 함께 커지므로 챗봇 창 너비에 비례한다(320~720px). 터치 목표는 40px 이상이다 */
+  --control-sm: clamp(40px, calc(40px + (100cqi - 360px) * 0.008), 44px); /* 칩, 작은 버튼 */
+  --control-md: clamp(42px, calc(42px + (100cqi - 360px) * 0.012), 48px); /* 도구 버튼 */
+  --control-lg: clamp(46px, calc(46px + (100cqi - 360px) * 0.012), 52px); /* 입력창, 전송 버튼 */
   --control-xl: 56px; /* 런처: 챗봇 창 밖이라 고정 */
-  --avatar-size: clamp(30px, calc(30px + (100cqi - 360px) * 0.025), 34px);
+  --control-composer-expanded: 68px; /* 전체 창 확대 때의 입력창·전송 버튼 높이 */
+  --modal-max: 340px;
+  --scrim: color-mix(in srgb, var(--palette-black) 60%, transparent);
+  --avatar-size: clamp(28px, calc(28px + (100cqi - 360px) * 0.012), 34px);
   --badge-size: 32px;
-  --moon-size: clamp(56px, calc(56px + (100cqi - 360px) * 0.05), 64px);
   --status-dot-size: 6px;
   --bubble-max: 86%;
 
-  /* 챗봇 창: 화면 너비에 따라 범위 안에서 연속으로 커지고 줄어든다 (560px 이하는 전체 화면) */
-  --chat-width: clamp(380px, 32vw, 520px);
-  --chat-height-max: clamp(520px, 86dvh, 840px);
+  /*
+   * 챗봇 창 크기. 기본값은 화면 너비에 따라 380~520px로 연속 변하고(560px 이하는 전체 화면),
+   * 사용자가 모서리나 가장자리를 끌면 --chat-width, --chat-height가 px 값으로 덮어써진다.
+   */
+  --chat-width: clamp(440px, 36vw, 600px);
+  --chat-height: min(var(--chat-height-max), calc(100dvh - 2 * var(--chat-inset)));
+  --chat-height-max: clamp(560px, 90dvh, 900px);
+  --chat-min-width: 360px;
+  --chat-max-width: 860px;
+  --chat-min-height: 440px;
   --chat-inset: 20px;
   --chat-content-max: 760px;
+
+  /* 크기 조절 핸들: 모서리 손잡이, 가장자리 잡는 폭, 모서리 표시(ㄱ자)의 한 변 */
+  --resize-corner: 32px;
+  --resize-edge: 10px;
+  --resize-grip: 12px;
+  --resize-step: 24px; /* 방향키 한 번에 바뀌는 크기 */
 
   /* ===== 9. 모션 ===== */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -165,6 +184,8 @@
   --lift: -2px;
 
   /* ===== 10. 겹침 순서 ===== */
+  --z-handle: 1; /* 챗봇 창 안쪽의 크기 조절 핸들 */
+  --z-popup: 2; /* 챗봇 창 안쪽의 확인 팝업(크기 핸들 위) */
   --z-launcher: 40;
   --z-chat: 50;
   --z-toast: 60;
