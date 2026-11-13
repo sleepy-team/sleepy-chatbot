@@ -5,6 +5,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [react()],
   base: './',
+  // 환경변수 없이 어느 OS에서나 데모 모드가 켜지도록 설정에서 직접 지정한다
+  define: { 'import.meta.env.VITE_DEMO': JSON.stringify('true') },
   build: {
     outDir: 'dist-demo',
     cssCodeSplit: false,

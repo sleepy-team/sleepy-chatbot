@@ -88,4 +88,4 @@
 
 ## 7. 데모 빌드
 
-- 백엔드 없이 확인하는 미리보기: `VITE_DEMO=true` + `frontend/vite.demo.config.js`(출력 `dist-demo`). `api/demoEngine.js`가 `data/*.json`을 글자 겹침으로 검색해 답한다(실제 RAG가 아님, 일반 빌드에는 포함되지 않음).
+- 백엔드·API 키 없이 확인하는 미리보기: `cd frontend; npm run demo`(개발 서버) 또는 `npm run demo:build`(출력 `dist-demo`, git 제외). 설정은 `frontend/vite.demo.config.js`가 `VITE_DEMO`를 켠다. `api/demoEngine.js`가 `data/*.json`을 글자 겹침으로 검색해 답한다(실제 RAG가 아님, 일반 빌드에는 포함되지 않음).
