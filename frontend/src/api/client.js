@@ -11,7 +11,11 @@ async function request(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-export function sendChat(message, sessionId, signal) {
+// 데모 빌드는 백엔드 대신 브라우저 안의 간단한 엔진을 쓴다 (정적 치환이라 일반 빌드에는 포함되지 않는다)
+const IS_DEMO = import.meta.env.VITE_DEMO === 'true';
+
+export async function sendChat(message, sessionId, signal) {
+  if (IS_DEMO) return (await import('./demoEngine')).demoChat(message, sessionId, signal);
   return request('/api/chats', {
     method: 'POST',
     body: JSON.stringify({ message, session_id: sessionId }),
@@ -19,10 +23,12 @@ export function sendChat(message, sessionId, signal) {
   });
 }
 
-export function resetChat(sessionId) {
+export async function resetChat(sessionId) {
+  if (IS_DEMO) return (await import('./demoEngine')).demoReset();
   return request(`/api/chats/${sessionId}`, { method: 'DELETE' });
 }
 
-export function sendInquiry(payload) {
+export async function sendInquiry(payload) {
+  if (IS_DEMO) return (await import('./demoEngine')).demoInquiry();
   return request('/api/inquiries', { method: 'POST', body: JSON.stringify(payload) });
 }
